@@ -102,7 +102,7 @@ const OnboardingPage = () => {
                 value={formState.bio}
                 onChange={(e) => setFormState({ ...formState, bio: e.target.value })}
                 className="textarea textarea-bordered h-24"
-                placeholder="Tell others about yourself and your language learning goals"
+                placeholder="Tell others about yourself and your streaming interests"
               />
             </div>
 
@@ -128,10 +128,10 @@ const OnboardingPage = () => {
                 </select>
               </div>
 
-              {/* language learning */}
+              {/* other languages */}
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text">Learning Language</span>
+                  <span className="label-text">Other Languages</span>
                 </label>
                 <select
                   name="learningLanguage"
@@ -139,9 +139,9 @@ const OnboardingPage = () => {
                   onChange={(e) => setFormState({ ...formState, learningLanguage: e.target.value })}
                   className="select select-bordered w-full"
                 >
-                  <option value="">Select language you're learning</option>
+                  <option value="">Select other languages you stream in</option>
                   {LANGUAGES.map((lang) => (
-                    <option key={`learning-${lang}`} value={lang.toLowerCase()}>
+                    <option key={`other-${lang}`} value={lang.toLowerCase()}>
                       {lang}
                     </option>
                   ))}

@@ -99,8 +99,27 @@ const CallContent = () => {
   const callingState = useCallCallingState();
 
   const navigate = useNavigate();
+  const { id: callId } = useParams();
+  const { authUser } = useAuthUser();
 
-  if (callingState === CallingState.LEFT) return navigate("/");
+  // when call ends, redirect back to chat with the other participant (if possible)
+  useEffect(() => {
+    if (callingState === CallingState.LEFT) {
+      try {
+        // callId is channel id created by joining two ids with '-'
+        const parts = (callId || "").split("-");
+        const otherId = parts.find((p) => p && p !== authUser?._id) || null;
+        if (otherId) {
+          navigate(`/chat/${otherId}`);
+        } else {
+          navigate("/");
+        }
+      } catch (err) {
+        console.error("Error navigating after call left:", err);
+        navigate("/");
+      }
+    }
+  }, [callingState, callId, authUser, navigate]);
 
   return (
     <StreamTheme>
