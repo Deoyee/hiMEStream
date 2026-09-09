@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router";
 import HomePage from "./pages/HomePage.jsx";
 import SignUpPage from "./pages/SignUpPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import NotificationsPage from "./pages/NotificationsPage.jsx";
 import FriendsPage from "./pages/FriendsPage.jsx";
 import CallPage from "./pages/CallPage.jsx";
@@ -51,6 +52,13 @@ const App = () => {
           path="/login"
           element={
             !isAuthenticated ? <LoginPage /> : <Navigate to={isOnboarded ? "/" : "/onboarding"} />
+          }
+        />
+
+        <Route
+          path="/forgot-password"
+          element={
+            !isAuthenticated ? <ForgotPasswordPage /> : <Navigate to={isOnboarded ? "/" : "/onboarding"} />
           }
         />
 
