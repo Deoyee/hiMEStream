@@ -5,6 +5,12 @@ const streamClient = StreamChat.getInstance(import.meta.env.VITE_STREAM_API_KEY)
 
 export const connectUser = async (user, token) => {
   try {
+    if (streamClient.userID === user._id && streamClient.user) {
+      return streamClient;
+    }
+    if (streamClient.userID && streamClient.userID !== user._id) {
+      await streamClient.disconnectUser();
+    }
     await streamClient.connectUser(
       {
         id: user._id,

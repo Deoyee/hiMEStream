@@ -16,6 +16,7 @@ import { StreamChat } from "stream-chat";
 import { getStreamToken } from "../lib/api.js";
 import ChatLoader from "../components/ChatLoader.jsx";
 import CallButton from "../components/CallButton.jsx";
+import CallModal from "../components/CallModal.jsx";
 
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
@@ -27,6 +28,7 @@ const ChatPage = () => {
   const [chatClient, setChatClient] = useState(null);
   const [channel, setChannel] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeCall, setActiveCall] = useState(null);
 
   const { authUser } = useAuthUser();
 
@@ -35,6 +37,34 @@ const ChatPage = () => {
     queryFn: getStreamToken,
     enabled: !!authUser, // this will run only when authUser is available
   });
+
+  // Intercept click on any call link in the chat to open in modal instead of new tab
+  useEffect(() => {
+    const handleChatClick = (e) => {
+      const anchor = e.target.closest("a");
+      if (anchor && anchor.href) {
+        try {
+          const url = new URL(anchor.href);
+          if (url.pathname.includes("/call/")) {
+            e.preventDefault();
+            e.stopPropagation();
+            const callId = url.pathname.split("/call/")[1];
+            const isAudio = url.searchParams.get("type") === "audio";
+            if (callId) {
+              setActiveCall({ callId, isAudioOnly: isAudio });
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    document.addEventListener("click", handleChatClick, true);
+    return () => {
+      document.removeEventListener("click", handleChatClick, true);
+    };
+  }, []);
 
   useEffect(() => {
     const initChat = async () => {
@@ -63,8 +93,84 @@ const ChatPage = () => {
 
         await currChannel.watch();
 
+        // Ensure fresh app settings with updated 100MB limit are loaded in browser
+        client.appSettingsPromise = client.getAppSettings();
+
+        // Client-side file selection watcher for instant feedback on file sizes
+        const handleFileChange = (e) => {
+          if (e.target && e.target.type === "file" && e.target.files) {
+            const files = Array.from(e.target.files);
+            for (const file of files) {
+              const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+              if (file.size > 100 * 1024 * 1024) {
+                toast.error(
+                  `"${file.name}" (${sizeMB}MB) exceeds the 100MB allowed limit. Maximum allowed is 100MB.`,
+                  { id: "file-size-limit", duration: 6000 }
+                );
+              } else if (file.type.startsWith("video/") && file.size > 10 * 1024 * 1024) {
+                toast(
+                  `"${file.name}" is ${sizeMB}MB. Allowed up to 100MB (keep videos under 10MB for fast sending).`,
+                  {
+                    icon: "ℹ️",
+                    id: "video-size-hint",
+                    duration: 5000,
+                  }
+                );
+              }
+            }
+          }
+        };
+
+        document.addEventListener("change", handleFileChange, true);
+
+        // Subscribe to upload/attachment notifications so user gets instant toast feedback
+        let lastNotifId = null;
+        const unsubscribeNotifications = client.notifications?.store?.subscribe?.((state) => {
+          const notifications = state?.notifications || [];
+          if (notifications.length > 0) {
+            const latest = notifications[notifications.length - 1];
+            if (latest && latest.id !== lastNotifId) {
+              lastNotifId = latest.id;
+              if (latest.severity === "error") {
+                if (latest.type?.includes("upload:blocked")) {
+                  const reason = latest.metadata?.reason;
+                  if (reason === "size_limit") {
+                    toast.error("File exceeds the allowed size limit. Maximum allowed is 100MB.", { id: "upload-blocked" });
+                  } else if (reason?.includes("extension") || reason?.includes("mime")) {
+                    toast.error("This file format is not supported.", { id: "upload-blocked" });
+                  } else {
+                    toast.error(`Upload blocked: ${reason || "Invalid file"}`, { id: "upload-blocked" });
+                  }
+                } else if (latest.type?.includes("upload:failed")) {
+                  const rawReason = latest.metadata?.reason || latest.message || "";
+                  if (rawReason.toLowerCase().includes("timeout")) {
+                    toast.error("Upload timed out. Allowed limit is 100MB (keep videos under 10MB for fast sending).", {
+                      id: "upload-failed",
+                      duration: 6000,
+                    });
+                  } else {
+                    toast.error(`Upload failed: ${rawReason || "Failed to upload file"}`, { id: "upload-failed" });
+                  }
+                }
+              } else if (latest.severity === "warning") {
+                if (latest.type?.includes("upload:in-progress") || latest.message?.includes("upload")) {
+                  toast("Please wait for the file to finish uploading before sending.", {
+                    icon: "⏳",
+                    id: "upload-in-progress",
+                  });
+                }
+              }
+            }
+          }
+        });
+
         setChatClient(client);
         setChannel(currChannel);
+
+        return () => {
+          document.removeEventListener("change", handleFileChange, true);
+          unsubscribeNotifications?.();
+        };
       } catch (error) {
         console.error("Error initializing chat:", error);
         toast.error("Could not connect to chat. Please try again.");
@@ -81,32 +187,71 @@ const ChatPage = () => {
       const callUrl = `${window.location.origin}/call/${channel.id}`;
 
       channel.sendMessage({
-        text: `I've started a video call. Join me here: ${callUrl}`,
+        text: `📹 I've started a video call. Join here:\n${callUrl}`,
       });
 
-      toast.success("Video call link sent successfully!");
+      toast.success("Video call started!");
+      setActiveCall({ callId: channel.id, isAudioOnly: false });
+    }
+  };
+
+  const handleVoiceCall = () => {
+    if (channel) {
+      const callUrl = `${window.location.origin}/call/${channel.id}?type=audio`;
+
+      channel.sendMessage({
+        text: `📞 I've started a voice call. Join here:\n${callUrl}`,
+      });
+
+      toast.success("Voice call started!");
+      setActiveCall({ callId: channel.id, isAudioOnly: true });
     }
   };
 
   if (loading || !chatClient || !channel) return <ChatLoader />;
 
   return (
-    <div className="h-[93vh]">
-      <Chat client={chatClient}>
+    <div className="h-full w-full flex flex-col flex-1 min-h-0 bg-base-100 overflow-hidden m-0 p-0">
+      <Chat client={chatClient} theme="str-chat__theme-dark">
         <Channel channel={channel}>
-          <div className="w-full relative">
-            <CallButton handleVideoCall={handleVideoCall} />
+          <div className="w-full h-full relative flex flex-col flex-1 min-h-0">
+            <CallButton handleVideoCall={handleVideoCall} handleVoiceCall={handleVoiceCall} />
             <Window>
               <ChannelHeader />
               <MessageList />
-              <MessageInput focus />
+              <div className="relative flex flex-col">
+                <MessageInput focus />
+                <div className="px-4 py-1.5 flex items-center justify-between text-[11px] text-gray-400 bg-[#191515] border-t border-white/5 select-none">
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>
+                      Allowed size: <strong className="text-gray-200 font-medium">100 MB</strong> per file &bull; Videos under <strong className="text-gray-200 font-medium">10 MB</strong> recommended
+                    </span>
+                  </span>
+                  <span className="hidden sm:inline-block text-[10px] text-gray-500">
+                    Supports: JPG, PNG, GIF, MP4, PDF, DOCX, ZIP & more
+                  </span>
+                </div>
+              </div>
             </Window>
           </div>
           <Thread />
         </Channel>
       </Chat>
+
+      {/* In-App Call Modal */}
+      {activeCall && (
+        <CallModal
+          isOpen={!!activeCall}
+          onClose={() => setActiveCall(null)}
+          callId={activeCall.callId}
+          isAudioOnly={activeCall.isAudioOnly}
+          authUser={authUser}
+          token={tokenData?.token}
+        />
+      )}
     </div>
-  )
+  );
 }
 
-export default ChatPage
+export default ChatPage;

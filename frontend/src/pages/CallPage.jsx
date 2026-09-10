@@ -56,7 +56,27 @@ const CallPage = () => {
 
         const callInstance = videoClient.call("default", callId);
 
+        const searchParams = new URLSearchParams(window.location.search);
+        const isAudioOnly = searchParams.get("type") === "audio";
+
+        // Pre-disable camera before joining so the webcam never turns on during call initialization
+        if (isAudioOnly) {
+          try {
+            await callInstance.camera.disable();
+          } catch (camErr) {
+            console.warn("Could not pre-disable camera for audio-only call:", camErr);
+          }
+        }
+
         await callInstance.join({ create: true });
+
+        if (isAudioOnly && callInstance.camera.enabled) {
+          try {
+            await callInstance.camera.disable();
+          } catch (camErr) {
+            console.warn("Could not disable camera for audio-only call:", camErr);
+          }
+        }
 
         console.log("Joined call successfully");
 
@@ -102,6 +122,9 @@ const CallContent = () => {
   const { id: callId } = useParams();
   const { authUser } = useAuthUser();
 
+  const searchParams = new URLSearchParams(window.location.search);
+  const isAudioOnly = searchParams.get("type") === "audio";
+
   // when call ends, redirect back to chat with the other participant (if possible)
   useEffect(() => {
     if (callingState === CallingState.LEFT) {
@@ -123,6 +146,12 @@ const CallContent = () => {
 
   return (
     <StreamTheme>
+      {isAudioOnly && (
+        <div className="absolute top-4 left-4 z-50 bg-black/70 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-medium text-emerald-400 border border-emerald-500/30 flex items-center gap-2 shadow-lg">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Voice Call</span>
+        </div>
+      )}
       <SpeakerLayout />
       <CallControls />
     </StreamTheme>
