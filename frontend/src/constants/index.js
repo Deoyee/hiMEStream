@@ -195,3 +195,21 @@ export const LANGUAGE_TO_FLAG = {
   turkish: "tr",
   dutch: "nl",
 };
+
+export const DARK_THEMES = new Set([
+  "dark",
+  "forest",
+  "synthwave",
+  "halloween",
+  "aqua",
+  "black",
+  "luxury",
+  "dracula",
+  "business",
+  "night",
+  "coffee",
+  "dim",
+  "sunset",
+]);
+
+export const isDarkTheme = (themeName) => DARK_THEMES.has(themeName);

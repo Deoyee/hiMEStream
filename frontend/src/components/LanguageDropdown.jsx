@@ -8,7 +8,7 @@ const LanguageDropdown = ({
   value = '',
   onChange,
   languages = [],
-  placeholder = 'All Languages',
+  placeholder,
   showAllOption = true,
   allowClear = true,
 }) => {
@@ -16,6 +16,15 @@ const LanguageDropdown = ({
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
+
+  // Default placeholder to 'All' when prefix is used, or 'All Languages' if no prefix
+  const resolvedPlaceholder = placeholder || (prefix ? 'All' : 'All Languages');
+
+  // Match language case-insensitively to display proper casing
+  const matchedLang = languages.find(
+    (l) => l.toLowerCase() === value?.toLowerCase()
+  );
+  const displayLabel = value ? (matchedLang || value) : resolvedPlaceholder;
 
   // Close when clicking outside
   useEffect(() => {
@@ -59,6 +68,15 @@ const LanguageDropdown = ({
     setSearchTerm('');
   };
 
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredLanguages.length > 0) {
+        handleSelect(filteredLanguages[0]);
+      }
+    }
+  };
+
   return (
     <div ref={dropdownRef} className="relative w-full select-none">
       {/* Trigger Button */}
@@ -82,14 +100,18 @@ const LanguageDropdown = ({
             <Icon className="size-4 opacity-50 flex-shrink-0 text-base-content" />
           ) : null}
 
-          <div className="truncate text-sm">
+          <div className="truncate text-sm flex items-center gap-1.5 min-w-0">
             {prefix && (
-              <span className="text-xs font-semibold uppercase tracking-wider opacity-60 mr-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider opacity-60 shrink-0">
                 {prefix}:
               </span>
             )}
-            <span className={value ? 'font-semibold text-base-content' : 'opacity-60 text-base-content'}>
-              {value || placeholder}
+            <span
+              className={`truncate ${
+                value ? 'font-semibold text-base-content' : 'opacity-60 text-base-content'
+              }`}
+            >
+              {displayLabel}
             </span>
           </div>
         </div>
@@ -120,7 +142,7 @@ const LanguageDropdown = ({
 
       {/* Floating Popover Menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-base-100/95 backdrop-blur-xl border border-base-content/15 rounded-2xl shadow-2xl overflow-hidden animate-fadeIn duration-150">
+        <div className="absolute top-full left-0 mt-1.5 z-50 w-full min-w-[220px] bg-base-100/95 backdrop-blur-xl border border-base-content/15 rounded-2xl shadow-2xl overflow-hidden animate-fadeIn duration-150">
           {/* Search inside dropdown */}
           <div className="p-2 border-b border-base-content/10 bg-base-200/40">
             <div className="relative flex items-center">
@@ -130,6 +152,7 @@ const LanguageDropdown = ({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 placeholder="Type to filter language..."
                 className="input input-xs w-full pl-8 pr-7 py-1 rounded-lg bg-base-100 border border-base-content/15 text-xs text-base-content focus:outline-none focus:border-primary"
               />
@@ -177,7 +200,7 @@ const LanguageDropdown = ({
               </div>
             ) : (
               filteredLanguages.map((lang) => {
-                const isSelected = value === lang;
+                const isSelected = Boolean(value) && value.toLowerCase() === lang.toLowerCase();
                 return (
                   <button
                     key={lang}

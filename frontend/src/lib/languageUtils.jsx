@@ -11,7 +11,7 @@ export function getLanguageFlag(language) {
       <img
         src={`https://flagcdn.com/24x18/${countryCode}.png`}
         alt={`${langLower} flag`}
-        className="h-3 mr-1 inline-block"
+        className="h-3.5 w-auto rounded-[2px] object-contain inline-block flex-shrink-0"
       />
     );
   }

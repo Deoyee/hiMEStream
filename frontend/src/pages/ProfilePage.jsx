@@ -78,7 +78,7 @@ const ProfilePage = () => {
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Edit Profile</h1>
         <p className="text-sm opacity-70 mt-1">
-          Customize how other language learners see you on hiMEStream
+          Customize how others see you on hiMEStream
         </p>
       </div>
 

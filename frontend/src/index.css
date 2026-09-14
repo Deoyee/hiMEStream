@@ -6,20 +6,22 @@
    STREAM CHAT THEME VARIABLES & OVERRIDES
    ============================================================ */
 .str-chat,
-.str-chat__theme-dark {
-  --str-chat__primary-color: #10b981;
-  --str-chat__background-color: #141010;
-  --str-chat__secondary-background-color: #1c1717;
-  --str-chat__surface-color: #1f1a1a;
-  --str-chat__secondary-surface-color: #241e1e;
-  --str-chat__primary-surface-color: transparent;
-  --str-chat__own-message-bubble-background-color: transparent;
-  --str-chat__own-message-bubble-color: #ffffff;
-  --str-chat__message-bubble-background-color: #241e1e;
-  --str-chat__message-bubble-color: #f3f4f6;
-  --str-chat__message-send-button-color: #10b981;
+.str-chat__theme-dark,
+.str-chat__theme-light {
+  --str-chat__primary-color: oklch(var(--p));
+  --str-chat__background-color: oklch(var(--b1));
+  --str-chat__secondary-background-color: oklch(var(--b2));
+  --str-chat__surface-color: oklch(var(--b2));
+  --str-chat__secondary-surface-color: oklch(var(--b3));
+  --str-chat__primary-surface-color: oklch(var(--p));
+  --str-chat__own-message-bubble-background-color: oklch(var(--p));
+  --str-chat__own-message-bubble-color: oklch(var(--pc));
+  --str-chat__message-bubble-background-color: oklch(var(--b2));
+  --str-chat__message-bubble-color: oklch(var(--bc));
+  --str-chat__message-send-button-color: oklch(var(--p));
   font-family: inherit;
   height: 100% !important;
+  color: oklch(var(--bc)) !important;
 }
 
 /* ============================================================
@@ -58,12 +60,12 @@
 }
 
 .str-chat__header-channel {
-  background-color: #1c1717 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background-color: oklch(var(--b2)) !important;
+  border-bottom: 1px solid oklch(var(--bc) / 0.1) !important;
   border-top: none !important;
   border-left: none !important;
   border-right: none !important;
-  color: #f3f4f6 !important;
+  color: oklch(var(--bc)) !important;
   padding: 10px 140px 10px 16px !important;
   min-height: 56px !important;
   cursor: pointer !important;
@@ -75,18 +77,18 @@
 }
 
 .str-chat__header-channel .str-chat__header-title {
-  color: #f3f4f6 !important;
+  color: oklch(var(--bc)) !important;
   font-weight: 700 !important;
   font-size: 15px !important;
 }
 
 .str-chat__header-channel .str-chat__header-subtitle {
-  color: rgba(243, 244, 246, 0.6) !important;
+  color: oklch(var(--bc) / 0.6) !important;
   font-size: 12px !important;
 }
 
 .str-chat__list {
-  background-color: #141010 !important;
+  background-color: oklch(var(--b1)) !important;
   padding: 16px !important;
   flex: 1 1 0% !important;
   min-height: 0 !important;
@@ -95,14 +97,17 @@
 
 /* ============================================================
    SENDER MESSAGE BUBBLE (ME)
-   Clean, sleek modern messenger bubble - NO nested pills or navy box!
+   Clean, sleek modern messenger bubble using selected theme!
    ============================================================ */
-.str-chat__message--me .str-chat__message-bubble {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-  color: #ffffff !important;
+.str-chat__message.str-chat__message--me .str-chat__message-bubble,
+.str-chat__message--me .str-chat__message-bubble,
+.str-chat__message-simple--me .str-chat__message-bubble {
+  background: oklch(var(--p)) !important;
+  background-color: oklch(var(--p)) !important;
+  color: oklch(var(--pc)) !important;
   border-radius: 18px 18px 4px 18px !important;
   border: none !important;
-  box-shadow: 0 3px 12px rgba(16, 185, 129, 0.28) !important;
+  box-shadow: 0 3px 12px oklch(var(--p) / 0.28) !important;
   overflow: hidden !important;
   padding: 0 !important;
 }
@@ -113,9 +118,10 @@
 .str-chat__message--me .str-chat__message-simple-text-inner,
 .str-chat__message--me .str-chat__message-simple__text-inner {
   background: transparent !important;
+  background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  color: #ffffff !important;
+  color: oklch(var(--pc)) !important;
   border-radius: 0 !important;
 }
 
@@ -124,19 +130,20 @@
 }
 
 .str-chat__message--me .str-chat__message-text-inner p,
+.str-chat__message--me .str-chat__message-text p,
 .str-chat__message--me .str-chat__message-simple-text-inner p {
-  color: #ffffff !important;
+  color: oklch(var(--pc)) !important;
   font-size: 14.5px !important;
   line-height: 1.45 !important;
   margin: 0 !important;
 }
 
-/* Sender bubble links - high contrast bold white so they are clearly readable on green */
+/* Sender bubble links - high contrast bold white so they are clearly readable on primary */
 .str-chat__message--me a,
 .str-chat__message--me .str-chat__message-text a,
 .str-chat__message--me .str-chat__message-text-inner a,
 .str-chat__message--me .str-chat__message-simple-text-inner a {
-  color: #ffffff !important;
+  color: oklch(var(--pc)) !important;
   font-weight: 600 !important;
   text-decoration: underline !important;
   text-underline-offset: 3px !important;
@@ -145,18 +152,19 @@
 
 .str-chat__message--me a:hover,
 .str-chat__message--me .str-chat__message-text a:hover {
-  color: #f0fdf4 !important;
+  color: oklch(var(--pc)) !important;
+  opacity: 0.9;
   text-decoration: underline !important;
 }
 
-/* Call links in sender bubble - interactive pill badge with dark glass effect */
+/* Call links in sender bubble - interactive pill badge with glass effect */
 .str-chat__message--me a[href*="/call/"] {
   display: inline-block !important;
   margin-top: 6px !important;
   padding: 6px 12px !important;
-  background: rgba(0, 0, 0, 0.35) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: oklch(var(--pc) / 0.18) !important;
+  color: oklch(var(--pc)) !important;
+  border: 1px solid oklch(var(--pc) / 0.35) !important;
   border-radius: 12px !important;
   font-size: 12.5px !important;
   font-weight: 600 !important;
@@ -166,21 +174,24 @@
 }
 
 .str-chat__message--me a[href*="/call/"]:hover {
-  background: rgba(0, 0, 0, 0.55) !important;
-  border-color: #ffffff !important;
-  color: #ffffff !important;
+  background: oklch(var(--pc) / 0.28) !important;
+  border-color: oklch(var(--pc) / 0.6) !important;
+  color: oklch(var(--pc)) !important;
   transform: translateY(-1px) !important;
 }
 
 /* ============================================================
    RECEIVER MESSAGE BUBBLE (OTHER)
    ============================================================ */
-.str-chat__message--other .str-chat__message-bubble {
-  background: #241e1e !important;
-  color: #f3f4f6 !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+.str-chat__message.str-chat__message--other .str-chat__message-bubble,
+.str-chat__message--other .str-chat__message-bubble,
+.str-chat__message-simple--other .str-chat__message-bubble {
+  background: oklch(var(--b2)) !important;
+  background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc)) !important;
+  border: 1px solid oklch(var(--bc) / 0.15) !important;
   border-radius: 18px 18px 18px 4px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
   overflow: hidden !important;
   padding: 0 !important;
 }
@@ -190,9 +201,10 @@
 .str-chat__message--other .str-chat__message-simple-text-inner,
 .str-chat__message--other .str-chat__message-simple__text-inner {
   background: transparent !important;
+  background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  color: #f3f4f6 !important;
+  color: oklch(var(--bc)) !important;
   border-radius: 0 !important;
 }
 
@@ -201,8 +213,9 @@
 }
 
 .str-chat__message--other .str-chat__message-text-inner p,
+.str-chat__message--other .str-chat__message-text p,
 .str-chat__message--other .str-chat__message-simple-text-inner p {
-  color: #f3f4f6 !important;
+  color: oklch(var(--bc)) !important;
   font-size: 14.5px !important;
   line-height: 1.45 !important;
   margin: 0 !important;
@@ -213,7 +226,7 @@
 .str-chat__message--other .str-chat__message-text a,
 .str-chat__message--other .str-chat__message-text-inner a,
 .str-chat__message--other .str-chat__message-simple-text-inner a {
-  color: #34d399 !important;
+  color: oklch(var(--p)) !important;
   font-weight: 600 !important;
   text-decoration: underline !important;
   text-underline-offset: 3px !important;
@@ -221,7 +234,8 @@
 }
 
 .str-chat__message--other a:hover {
-  color: #6ee7b7 !important;
+  color: oklch(var(--p)) !important;
+  opacity: 0.85;
 }
 
 /* Call links in receiver bubble */
@@ -229,9 +243,9 @@
   display: inline-block !important;
   margin-top: 6px !important;
   padding: 6px 12px !important;
-  background: rgba(16, 185, 129, 0.18) !important;
-  color: #34d399 !important;
-  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+  background: oklch(var(--p) / 0.12) !important;
+  color: oklch(var(--p)) !important;
+  border: 1px solid oklch(var(--p) / 0.35) !important;
   border-radius: 12px !important;
   font-size: 12.5px !important;
   font-weight: 600 !important;
@@ -241,9 +255,9 @@
 }
 
 .str-chat__message--other a[href*="/call/"]:hover {
-  background: rgba(16, 185, 129, 0.3) !important;
-  border-color: #34d399 !important;
-  color: #6ee7b7 !important;
+  background: oklch(var(--p) / 0.22) !important;
+  border-color: oklch(var(--p) / 0.6) !important;
+  color: oklch(var(--p)) !important;
   transform: translateY(-1px) !important;
 }
 
@@ -263,17 +277,17 @@
 
 /* Message metadata (timestamp, edited, checkmark) */
 .str-chat__message-metadata {
-  color: rgba(255, 255, 255, 0.45) !important;
+  color: oklch(var(--bc) / 0.5) !important;
   font-size: 11px !important;
   margin-top: 4px !important;
 }
 
 .str-chat__message-status {
-  color: #10b981 !important;
+  color: oklch(var(--p)) !important;
 }
 
 .str-chat__message-status svg path {
-  fill: #10b981 !important;
+  fill: oklch(var(--p)) !important;
 }
 
 /* Message hover actions (reaction, reply, edit menu) - Compact, no vertical stretching */
@@ -294,10 +308,10 @@
 .str-chat__message-options .str-chat__message-actions-box-button,
 .str-chat__message-options .str-chat__message-reply-in-thread-button,
 .str-chat__message-options .str-chat__message-reactions-button {
-  background: rgba(32, 26, 26, 0.92) !important;
+  background: oklch(var(--b2) / 0.95) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid oklch(var(--bc) / 0.15) !important;
   border-radius: 50% !important;
   width: 32px !important;
   height: 32px !important;
@@ -307,17 +321,17 @@
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  color: #9ca3af !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+  color: oklch(var(--bc) / 0.7) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
   transition: all 0.15s ease !important;
 }
 
 .str-chat__message-options .str-chat__message-actions-box-button:hover,
 .str-chat__message-options .str-chat__message-reply-in-thread-button:hover,
 .str-chat__message-options .str-chat__message-reactions-button:hover {
-  background: #362a2a !important;
-  color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: oklch(var(--b3)) !important;
+  color: oklch(var(--bc)) !important;
+  border-color: oklch(var(--bc) / 0.3) !important;
   transform: scale(1.1) !important;
 }
 
@@ -327,29 +341,29 @@
 
 /* Reaction selector popup (when clicking the smiley) */
 .str-chat__message-reactions-options {
-  background: #1e1818 !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: oklch(var(--b2)) !important;
+  border: 1px solid oklch(var(--bc) / 0.15) !important;
   border-radius: 9999px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
   padding: 6px 10px !important;
 }
 
 .str-chat__message-reactions-option:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: oklch(var(--bc) / 0.1) !important;
 }
 
 /* Three-dots menu (actions box dropdown) */
 .str-chat__message-actions-box {
-  background: #1e1818 !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: oklch(var(--b2)) !important;
+  border: 1px solid oklch(var(--bc) / 0.15) !important;
   border-radius: 14px !important;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25) !important;
   padding: 6px !important;
   z-index: 50 !important;
 }
 
 .str-chat__message-actions-list-item-button {
-  color: #e5e7eb !important;
+  color: oklch(var(--bc)) !important;
   font-size: 13px !important;
   padding: 8px 12px !important;
   border-radius: 8px !important;
@@ -357,37 +371,52 @@
 }
 
 .str-chat__message-actions-list-item-button:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
+  background: oklch(var(--bc) / 0.08) !important;
+  color: oklch(var(--bc)) !important;
 }
 
 /* Message input area */
 .str-chat__message-input {
-  background-color: #1c1717 !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background-color: oklch(var(--b2)) !important;
+  border-top: 1px solid oklch(var(--bc) / 0.1) !important;
   padding: 10px 16px !important;
 }
 
 .str-chat__message-textarea-with-emoji-picker {
-  background-color: #241e1e !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background-color: oklch(var(--b1)) !important;
+  border: 1px solid oklch(var(--bc) / 0.15) !important;
   border-radius: 24px !important;
-  color: #f3f4f6 !important;
+  color: oklch(var(--bc)) !important;
 }
 
 .str-chat__message-textarea-with-emoji-picker textarea {
-  color: #f3f4f6 !important;
+  color: oklch(var(--bc)) !important;
+}
+
+.str-chat__message-textarea-with-emoji-picker textarea::placeholder {
+  color: oklch(var(--bc) / 0.45) !important;
 }
 
 /* Voice Notes & Audio Recording styling */
 .str-chat__start-recording-audio-button {
-  color: #10b981 !important;
+  color: oklch(var(--p)) !important;
   transition: all 0.15s ease !important;
 }
 
 .str-chat__start-recording-audio-button:hover {
-  color: #34d399 !important;
+  color: oklch(var(--p)) !important;
+  opacity: 0.85;
   transform: scale(1.1) !important;
+}
+
+.str-chat__send-button,
+button[data-testid="send-message-button"] {
+  color: oklch(var(--p)) !important;
+}
+
+.str-chat__send-button svg path,
+button[data-testid="send-message-button"] svg path {
+  fill: oklch(var(--p)) !important;
 }
 
 .str-chat__audio_recorder-container {
@@ -396,12 +425,12 @@
 }
 
 .str-chat__audio_recorder {
-  background-color: #241e1e !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background-color: oklch(var(--b1)) !important;
+  border: 1px solid oklch(var(--bc) / 0.15) !important;
   border-radius: 9999px !important;
-  color: #f3f4f6 !important;
+  color: oklch(var(--bc)) !important;
   padding: 4px 8px 4px 14px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
@@ -409,11 +438,11 @@
 }
 
 .str-chat__audio_recorder__waveform {
-  --str-chat__waveform-color: #10b981 !important;
+  --str-chat__waveform-color: oklch(var(--p)) !important;
 }
 
 .str-chat__audio_recorder__cancel-button {
-  color: #ef4444 !important;
+  color: oklch(var(--er)) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -425,13 +454,13 @@
 }
 
 .str-chat__audio_recorder__cancel-button svg path {
-  fill: #ef4444 !important;
+  fill: oklch(var(--er)) !important;
 }
 
 .str-chat__audio_recorder__toggle-playback-button,
 .str-chat__audio_recorder__pause-recording-button,
 .str-chat__audio_recorder__resume-recording-button {
-  color: #f3f4f6 !important;
+  color: oklch(var(--bc)) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -440,21 +469,21 @@
 .str-chat__audio_recorder__toggle-playback-button svg path,
 .str-chat__audio_recorder__pause-recording-button svg path,
 .str-chat__audio_recorder__resume-recording-button svg path {
-  fill: #f3f4f6 !important;
+  fill: oklch(var(--bc)) !important;
 }
 
 .str-chat__recording-timer {
-  color: #f3f4f6 !important;
+  color: oklch(var(--bc)) !important;
   font-variant-numeric: tabular-nums !important;
   font-weight: 600 !important;
   font-size: 13px !important;
 }
 
-/* Complete & Stop Send Button (Green circle with CRISP WHITE check/arrow inside!) */
+/* Complete & Stop Send Button */
 .str-chat__audio_recorder__stop-button,
 .str-chat__audio_recorder__complete-button {
-  background-color: #10b981 !important;
-  color: #ffffff !important;
+  background-color: oklch(var(--p)) !important;
+  color: oklch(var(--pc)) !important;
   border-radius: 50% !important;
   width: 32px !important;
   height: 32px !important;
@@ -462,13 +491,14 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 2px 8px oklch(var(--p) / 0.35) !important;
   transition: all 0.15s ease !important;
 }
 
 .str-chat__audio_recorder__stop-button:hover,
 .str-chat__audio_recorder__complete-button:hover {
-  background-color: #059669 !important;
+  background-color: oklch(var(--p)) !important;
+  opacity: 0.9;
   transform: scale(1.08) !important;
 }
 
@@ -476,15 +506,15 @@
 .str-chat__audio_recorder__complete-button svg,
 .str-chat__audio_recorder__stop-button svg path,
 .str-chat__audio_recorder__complete-button svg path {
-  color: #ffffff !important;
-  fill: #ffffff !important;
+  color: oklch(var(--pc)) !important;
+  fill: oklch(var(--pc)) !important;
 }
 
 /* Waveform progress bar & smooth gliding seeker */
 .str-chat__wave-progress-bar__progress-indicator {
   transition: left 0.12s linear !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.7) !important;
+  background-color: oklch(var(--p)) !important;
+  box-shadow: 0 0 6px oklch(var(--p) / 0.7) !important;
 }
 
 .str-chat__wave-progress-bar__amplitude-bar {
@@ -492,26 +522,26 @@
 }
 
 .str-chat__wave-progress-bar__amplitude-bar--active {
-  background-color: #10b981 !important;
+  background-color: oklch(var(--p)) !important;
 }
 
 /* Audio attachment player inside messages */
 .str-chat__message-attachment-audio-widget,
 .str-chat__message-attachment-audio-player {
-  background: rgba(0, 0, 0, 0.2) !important;
+  background: oklch(var(--bc) / 0.06) !important;
   border-radius: 16px !important;
   padding: 8px 12px !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid oklch(var(--bc) / 0.1) !important;
 }
 
 .str-chat__message-attachment-audio-widget--play-button {
-  background: #10b981 !important;
-  color: #ffffff !important;
+  background: oklch(var(--p)) !important;
+  color: oklch(var(--pc)) !important;
   border-radius: 50% !important;
 }
 
 .str-chat__message-attachment-audio-widget--play-button svg path {
-  fill: #ffffff !important;
+  fill: oklch(var(--pc)) !important;
 }
 
 /* ============================================================
@@ -539,10 +569,10 @@
 }
 
 .str-chat__modal--open:not(.str-chat__gallery-modal) .str-chat__modal__inner {
-  background: #1c1717 !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: oklch(var(--b2)) !important;
+  border: 1px solid oklch(var(--bc) / 0.15) !important;
   border-radius: 20px !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
   padding: 24px 20px 20px !important;
   width: 94% !important;
   max-width: 480px !important;
@@ -553,6 +583,7 @@
   flex-direction: column !important;
   box-sizing: border-box !important;
   overflow: visible !important;
+  color: oklch(var(--bc)) !important;
 }
 
 /* Close button for Edit Modal */
@@ -567,20 +598,24 @@
   width: 36px !important;
   height: 36px !important;
   border-radius: 50% !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: #e5e7eb !important;
+  background: oklch(var(--bc) / 0.1) !important;
+  color: oklch(var(--bc)) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid oklch(var(--bc) / 0.15) !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
   z-index: 10000 !important;
 }
 
 .str-chat__modal--open:not(.str-chat__gallery-modal) .str-chat__modal__close-button:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
-  color: #ffffff !important;
+  background: oklch(var(--bc) / 0.2) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+.str-chat__modal--open:not(.str-chat__gallery-modal) .str-chat__modal__close-button svg path {
+  fill: oklch(var(--bc)) !important;
 }
 
 .str-chat__modal--open:not(.str-chat__gallery-modal) .str-chat__modal__close-button svg {
@@ -589,7 +624,7 @@
 }
 
 .str-chat__modal--open:not(.str-chat__gallery-modal) .str-chat__modal__close-button svg path {
-  fill: #ffffff !important;
+  fill: oklch(var(--bc)) !important;
 }
 
 .str-chat__modal--open:not(.str-chat__gallery-modal) .str-chat__modal__close-button svg rect,
@@ -783,8 +818,8 @@
 .str-chat__gallery-modal .image-gallery-right-nav:focus,
 .str-chat__gallery-modal .image-gallery-icon:focus {
   outline: none !important;
-  border-color: #10b981 !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.35) !important;
+  border-color: oklch(var(--p)) !important;
+  box-shadow: 0 0 0 3px oklch(var(--p) / 0.35) !important;
 }
 
 .str-chat__gallery-modal .image-gallery-left-nav .image-gallery-svg,
@@ -870,21 +905,21 @@
 
 .str-chat__edit-message-form .str-chat__message-textarea-with-emoji-picker,
 .str-chat__edit-message-form textarea {
-  background-color: #241e1e !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background-color: oklch(var(--b1)) !important;
+  border: 1px solid oklch(var(--bc) / 0.15) !important;
   border-radius: 14px !important;
-  color: #f3f4f6 !important;
+  color: oklch(var(--bc)) !important;
   padding: 12px 14px !important;
   font-size: 14px !important;
   line-height: 1.45 !important;
   width: 100% !important;
   outline: none !important;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
 .str-chat__edit-message-form textarea:focus {
-  border-color: #10b981 !important;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
+  border-color: oklch(var(--p)) !important;
+  box-shadow: 0 0 0 2px oklch(var(--p) / 0.25) !important;
 }
 
 /* Separated, distinct edit message buttons */
@@ -895,15 +930,15 @@
   gap: 12px !important;
   margin-top: 14px !important;
   padding-top: 12px !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 1px solid oklch(var(--bc) / 0.08) !important;
 }
 
 .str-chat__edit-message-cancel {
   padding: 8px 18px !important;
   border-radius: 10px !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #9ca3af !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: oklch(var(--bc) / 0.08) !important;
+  color: oklch(var(--bc) / 0.7) !important;
+  border: 1px solid oklch(var(--bc) / 0.12) !important;
   font-weight: 500 !important;
   font-size: 13px !important;
   cursor: pointer !important;
@@ -912,36 +947,37 @@
 }
 
 .str-chat__edit-message-cancel:hover {
-  background: rgba(255, 255, 255, 0.14) !important;
-  color: #f3f4f6 !important;
+  background: oklch(var(--bc) / 0.14) !important;
+  color: oklch(var(--bc)) !important;
 }
 
 .str-chat__edit-message-send {
   padding: 8px 22px !important;
   border-radius: 10px !important;
-  background: #10b981 !important;
-  color: #ffffff !important;
+  background: oklch(var(--p)) !important;
+  color: oklch(var(--pc)) !important;
   border: none !important;
   font-weight: 600 !important;
   font-size: 13px !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35) !important;
+  box-shadow: 0 2px 8px oklch(var(--p) / 0.35) !important;
   transition: all 0.15s ease !important;
   text-transform: uppercase !important;
   letter-spacing: 0.02em !important;
 }
 
 .str-chat__edit-message-send:hover {
-  background: #059669 !important;
+  background: oklch(var(--p)) !important;
+  opacity: 0.9;
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 4px 12px oklch(var(--p) / 0.45) !important;
 }
 
 /* Date separators */
 .str-chat__date-separator-date {
-  background-color: #241e1e !important;
-  color: rgba(243, 244, 246, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc) / 0.7) !important;
+  border: 1px solid oklch(var(--bc) / 0.1) !important;
   font-size: 11px !important;
   border-radius: 999px !important;
   padding: 4px 12px !important;
@@ -949,18 +985,18 @@
 
 /* Date separator line */
 .str-chat__date-separator-line {
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: oklch(var(--bc) / 0.1) !important;
 }
 
 /* ============================================================
    ATTACHMENT PREVIEWS IN COMPOSER (FILE, VIDEO, AUDIO)
    ============================================================ */
 .str-chat__attachment-preview-file {
-  background: #241e1e !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: oklch(var(--b2)) !important;
+  border: 1px solid oklch(var(--bc) / 0.15) !important;
   border-radius: 12px !important;
   padding: 8px 14px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
   position: relative !important;
   display: flex !important;
   align-items: center !important;
@@ -969,7 +1005,7 @@
 }
 
 .str-chat__attachment-preview-file-name {
-  color: #f3f4f6 !important;
+  color: oklch(var(--bc)) !important;
   font-weight: 500 !important;
   font-size: 13px !important;
 }

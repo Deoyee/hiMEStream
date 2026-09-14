@@ -45,34 +45,34 @@ export const CallMessage = ({ message, isMyMessage, onCallBack }) => {
     <div
       className={`flex items-center gap-3.5 my-1.5 px-4 py-3 rounded-2xl max-w-sm transition-all shadow-md select-none ${
         isMyMessage
-          ? "ml-auto bg-gradient-to-r from-emerald-900/60 to-emerald-800/40 border border-emerald-500/30 text-emerald-50"
+          ? "ml-auto bg-primary text-primary-content border border-primary/25 shadow-primary/20"
           : isMissed
-          ? "mr-auto bg-gradient-to-r from-rose-950/60 to-rose-900/40 border border-rose-500/30 text-rose-100"
-          : "mr-auto bg-[#241e1e] border border-white/10 text-gray-100"
+          ? "mr-auto bg-error/15 text-error border border-error/25"
+          : "mr-auto bg-base-200 text-base-content border border-base-content/10"
       }`}
     >
       {/* Call Icon Avatar */}
       <div
         className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-inner ${
           isMissed
-            ? "bg-rose-500/20 text-rose-400 ring-1 ring-rose-500/30"
+            ? "bg-error/20 text-error ring-1 ring-error/30"
             : isMyMessage
-            ? "bg-emerald-500/25 text-emerald-300 ring-1 ring-emerald-500/30"
-            : "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30"
+            ? "bg-primary-content/20 text-primary-content ring-1 ring-primary-content/30"
+            : "bg-primary/15 text-primary ring-1 ring-primary/25"
         }`}
       >
         {isAudio ? (
           isMissed ? (
-            <PhoneMissed className="w-5 h-5 text-rose-400 animate-pulse" />
+            <PhoneMissed className="w-5 h-5 text-error animate-pulse" />
           ) : isMyMessage ? (
-            <PhoneOutgoing className="w-5 h-5 text-emerald-300" />
+            <PhoneOutgoing className="w-5 h-5 text-primary-content" />
           ) : (
-            <PhoneIncoming className="w-5 h-5 text-emerald-400" />
+            <PhoneIncoming className="w-5 h-5 text-primary" />
           )
         ) : isMissed ? (
-          <VideoOff className="w-5 h-5 text-rose-400 animate-pulse" />
+          <VideoOff className="w-5 h-5 text-error animate-pulse" />
         ) : (
-          <Video className="w-5 h-5 text-emerald-400" />
+          <Video className="w-5 h-5 text-primary" />
         )}
       </div>
 
@@ -80,15 +80,17 @@ export const CallMessage = ({ message, isMyMessage, onCallBack }) => {
       <div className="flex flex-col min-w-0 flex-1">
         <span
           className={`text-[13.5px] font-semibold leading-snug truncate ${
-            isMissed ? "text-rose-300" : isMyMessage ? "text-emerald-100" : "text-gray-100"
+            isMissed ? "text-error" : isMyMessage ? "text-primary-content" : "text-base-content"
           }`}
         >
           {title}
         </span>
-        <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
+        <div className={`flex items-center gap-1.5 text-[11px] mt-0.5 ${
+          isMyMessage ? "text-primary-content/75" : isMissed ? "text-error/80" : "text-base-content/60"
+        }`}>
           <span>{timeStr}</span>
           <span>&bull;</span>
-          <span className={isMissed ? "text-rose-400 font-medium" : "text-gray-400"}>
+          <span className={isMissed ? "text-error font-medium" : ""}>
             {isMissed ? "No answer" : "Call ended"}
           </span>
         </div>
@@ -101,8 +103,10 @@ export const CallMessage = ({ message, isMyMessage, onCallBack }) => {
           onClick={() => onCallBack(isAudio)}
           className={`btn btn-circle btn-sm border-0 transition-transform active:scale-95 shrink-0 ${
             isMissed
-              ? "bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white"
-              : "bg-emerald-500/20 hover:bg-emerald-600 text-emerald-300 hover:text-white"
+              ? "bg-error/20 hover:bg-error text-error hover:text-error-content"
+              : isMyMessage
+              ? "bg-primary-content/20 hover:bg-primary-content/30 text-primary-content"
+              : "bg-primary/15 hover:bg-primary text-primary hover:text-primary-content"
           }`}
           title={isAudio ? "Voice call back" : "Video call back"}
         >

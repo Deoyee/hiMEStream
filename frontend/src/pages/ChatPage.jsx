@@ -20,6 +20,8 @@ import CallButton from "../components/CallButton.jsx";
 import CallModal from "../components/CallModal.jsx";
 import CallMessage from "../components/CallMessage.jsx";
 import UserProfileModal from "../components/UserProfileModal.jsx";
+import { useThemeStore } from "../store/useThemeStore.js";
+import { isDarkTheme } from "../constants/index.js";
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -34,6 +36,9 @@ const ChatPage = () => {
 
   const queryClient = useQueryClient();
   const { authUser } = useAuthUser();
+  const { theme } = useThemeStore();
+  const isDark = isDarkTheme(theme);
+  const streamTheme = isDark ? "str-chat__theme-dark" : "str-chat__theme-light";
 
   const { data: tokenData } = useQuery({
     queryKey: ["streamToken"],
@@ -308,7 +313,7 @@ const ChatPage = () => {
 
   return (
     <div className="h-full w-full flex flex-col flex-1 min-h-0 bg-base-100 overflow-hidden m-0 p-0">
-      <Chat client={chatClient} theme="str-chat__theme-dark">
+      <Chat client={chatClient} theme={streamTheme}>
         <Channel channel={channel}>
           <div className="w-full h-full relative flex flex-col flex-1 min-h-0">
             <CallButton
@@ -325,14 +330,14 @@ const ChatPage = () => {
                   audioRecordingEnabled={true}
                   audioRecordingConfig={audioRecordingConfig}
                 />
-                <div className="px-4 py-1.5 flex items-center justify-between text-[11px] text-gray-400 bg-[#191515] border-t border-white/5 select-none">
+                <div className="px-4 py-1.5 flex items-center justify-between text-[11px] text-base-content/60 bg-base-200 border-t border-base-content/10 select-none">
                   <span className="flex items-center gap-1.5">
-                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                     <span>
-                      Allowed size: <strong className="text-gray-200 font-medium">100 MB</strong> per file &bull; Videos under <strong className="text-gray-200 font-medium">10 MB</strong> recommended
+                      Allowed size: <strong className="text-base-content font-medium">100 MB</strong> per file &bull; Videos under <strong className="text-base-content font-medium">10 MB</strong> recommended
                     </span>
                   </span>
-                  <span className="hidden sm:inline-block text-[10px] text-gray-500">
+                  <span className="hidden sm:inline-block text-[10px] text-base-content/50">
                     Supports: JPG, PNG, GIF, MP4, PDF, DOCX, ZIP & more
                   </span>
                 </div>

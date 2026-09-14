@@ -134,32 +134,34 @@ const HomePage = () => {
   // Filter recommended users
   const filteredUsers = recommendedUsers.filter((user) => {
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+      const q = searchQuery.trim().toLowerCase();
       const matchName = user.fullName?.toLowerCase().includes(q);
       const matchLoc = user.location?.toLowerCase().includes(q);
       const matchBio = user.bio?.toLowerCase().includes(q);
-      if (!matchName && !matchLoc && !matchBio) return false;
+      const matchNative = user.nativeLanguage?.toLowerCase().includes(q);
+      const matchLearning = user.learningLanguage?.toLowerCase().includes(q);
+      if (!matchName && !matchLoc && !matchBio && !matchNative && !matchLearning) return false;
     }
 
-    if (filterNative && user.nativeLanguage !== filterNative) {
+    if (filterNative && user.nativeLanguage?.toLowerCase() !== filterNative.toLowerCase()) {
       return false;
     }
 
-    if (filterLearning && user.learningLanguage !== filterLearning) {
+    if (filterLearning && user.learningLanguage?.toLowerCase() !== filterLearning.toLowerCase()) {
       return false;
     }
 
     if (perfectMatchOnly && authUser) {
       const isPerfect =
-        user.nativeLanguage === authUser.learningLanguage &&
-        user.learningLanguage === authUser.nativeLanguage;
+        user.nativeLanguage?.toLowerCase() === authUser.learningLanguage?.toLowerCase() &&
+        user.learningLanguage?.toLowerCase() === authUser.nativeLanguage?.toLowerCase();
       if (!isPerfect) return false;
     }
 
     return true;
   });
 
-  const hasActiveFilters = searchQuery || filterNative || filterLearning || perfectMatchOnly;
+  const hasActiveFilters = Boolean(searchQuery || filterNative || filterLearning || perfectMatchOnly);
 
   const resetFilters = () => {
     setSearchQuery('');
@@ -175,7 +177,7 @@ const HomePage = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Your Friends</h2>
-            <p className="text-sm opacity-70 mt-1">Chat and video call with your language partners</p>
+            <p className="text-sm opacity-70 mt-1">Chat and video call with your friends and connections</p>
           </div>
           <Link to="/notifications" className="btn btn-outline btn-sm rounded-[2.5rem]">
             <UsersIcon className="mr-2 size-4" />
@@ -242,8 +244,8 @@ const HomePage = () => {
         <section className="space-y-6 pt-6 border-t border-base-300">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Meet New Learners</h2>
-              <p className="text-sm opacity-70 mt-1">Discover language learners from around the globe</p>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Meet New People</h2>
+              <p className="text-sm opacity-70 mt-1">Discover people from around the globe</p>
             </div>
 
             {/* Perfect match button */}
@@ -265,16 +267,16 @@ const HomePage = () => {
 
           {/* Search & Filter Controls Bar */}
           <div className="bg-base-200/90 border border-base-content/10 p-3.5 sm:p-4 rounded-2xl space-y-3 shadow-sm">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               {/* Search Bar with no icon overlapping */}
-              <div className="lg:col-span-4">
+              <div className="flex-1 min-w-[220px]">
                 <label className="input input-bordered h-11 flex items-center gap-2.5 rounded-xl bg-base-100 border-base-content/20 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/25 shadow-sm transition-all">
                   <Search className="size-4 opacity-50 flex-shrink-0 text-base-content" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by name, city..."
+                    placeholder="Search by name, city, language..."
                     className="grow text-sm bg-transparent border-none outline-none focus:outline-none text-base-content placeholder:text-base-content/40 min-w-0"
                   />
                   {searchQuery && (
@@ -292,7 +294,7 @@ const HomePage = () => {
               </div>
 
               {/* Native Language Custom Dropdown */}
-              <div className="lg:col-span-3">
+              <div className="w-full sm:w-48 lg:w-52 shrink-0">
                 <LanguageDropdown
                   prefix="Native"
                   icon={Languages}
@@ -303,7 +305,7 @@ const HomePage = () => {
               </div>
 
               {/* Learning Language Custom Dropdown */}
-              <div className="lg:col-span-3">
+              <div className="w-full sm:w-48 lg:w-52 shrink-0">
                 <LanguageDropdown
                   prefix="Learning"
                   icon={Globe2}
@@ -314,21 +316,27 @@ const HomePage = () => {
               </div>
 
               {/* Reset Filters / Partner Count */}
-              <div className="lg:col-span-2 flex items-center">
-                {hasActiveFilters ? (
+              <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0 px-1">
+                <div className="text-xs opacity-70 font-medium whitespace-nowrap">
+                  {hasActiveFilters ? (
+                    <span>
+                      <strong className="text-primary font-semibold">{filteredUsers.length}</strong> of{' '}
+                      {recommendedUsers.length} found
+                    </span>
+                  ) : (
+                    <span>{recommendedUsers.length} available</span>
+                  )}
+                </div>
+                {hasActiveFilters && (
                   <button
                     type="button"
                     onClick={resetFilters}
-                    className="btn btn-error btn-outline h-11 min-h-[44px] w-full rounded-xl gap-2 text-xs font-semibold px-3 transition-all hover:shadow-md active:scale-95"
+                    className="btn btn-ghost btn-xs text-error hover:bg-error/10 rounded-lg gap-1 font-semibold px-2 py-1 h-8 min-h-[32px] transition-all active:scale-95"
                     title="Clear all filters"
                   >
-                    <X className="size-4" />
-                    <span>Clear Filters</span>
+                    <X className="size-3.5" />
+                    <span>Clear</span>
                   </button>
-                ) : (
-                  <div className="w-full text-center lg:text-right text-xs opacity-60 px-2 font-medium">
-                    <span>{filteredUsers.length} available</span>
-                  </div>
                 )}
               </div>
             </div>
@@ -350,7 +358,10 @@ const HomePage = () => {
                 )}
                 {filterNative && (
                   <span className="badge badge-primary badge-outline gap-1.5 py-2.5 px-3 rounded-xl font-medium">
-                    <span>Native: {filterNative}</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      {getLanguageFlag(filterNative)}
+                      <span>Native: {capitialize(filterNative)}</span>
+                    </span>
                     <X
                       className="size-3 cursor-pointer hover:text-error transition-colors"
                       onClick={() => setFilterNative('')}
@@ -359,7 +370,10 @@ const HomePage = () => {
                 )}
                 {filterLearning && (
                   <span className="badge badge-primary badge-outline gap-1.5 py-2.5 px-3 rounded-xl font-medium">
-                    <span>Learning: {filterLearning}</span>
+                    <span className="inline-flex items-center gap-1.5">
+                      {getLanguageFlag(filterLearning)}
+                      <span>Learning: {capitialize(filterLearning)}</span>
+                    </span>
                     <X
                       className="size-3 cursor-pointer hover:text-error transition-colors"
                       onClick={() => setFilterLearning('')}
@@ -393,9 +407,9 @@ const HomePage = () => {
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="card bg-base-200/60 p-10 text-center border border-base-content/10 rounded-2xl space-y-2">
-              <h3 className="font-semibold text-lg">No learners match your current filter</h3>
+              <h3 className="font-semibold text-lg">No people match your current filter</h3>
               <p className="text-base-content/70 text-sm">
-                Try clearing search terms or language filters to view more partners.
+                Try clearing search terms or filters to view more people.
               </p>
               {hasActiveFilters && (
                 <button

@@ -41,7 +41,7 @@ const FriendsPage = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Chats & Friends</h1>
-            <p className="text-sm opacity-70 mt-1">Connect and converse with your language partners</p>
+            <p className="text-sm opacity-70 mt-1">Connect and chat with your friends</p>
           </div>
           <Link to="/notifications" className="btn btn-outline btn-primary btn-sm rounded-xl">
             Notifications
@@ -100,7 +100,7 @@ const FriendsPage = () => {
           </div>
           {friends.length === 0 ? (
             <div className="card bg-base-200/60 border border-base-content/10 p-8 rounded-2xl text-center">
-              <p className="opacity-70 text-sm">No friends added yet. Meet learners from the home page!</p>
+              <p className="opacity-70 text-sm">No friends added yet. Meet people from the home page!</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
