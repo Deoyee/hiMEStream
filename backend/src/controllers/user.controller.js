@@ -1,5 +1,117 @@
 import FriendRequest from "../models/FriendRequest.js";
 import User from "../models/User.js";
+import { upsertStreamUser } from "../lib/stream.js";
+
+export async function updateProfile(req, res) {
+    try {
+        const userId = req.user.id;
+        const { fullName, bio, nativeLanguage, learningLanguage, location, profilePic } = req.body;
+
+        const updateData = {};
+        if (fullName !== undefined) updateData.fullName = fullName.trim();
+        if (bio !== undefined) updateData.bio = bio;
+        if (nativeLanguage !== undefined) updateData.nativeLanguage = nativeLanguage;
+        if (learningLanguage !== undefined) updateData.learningLanguage = learningLanguage;
+        if (location !== undefined) updateData.location = location;
+        if (profilePic !== undefined) updateData.profilePic = profilePic;
+
+        const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        try {
+            await upsertStreamUser({
+                id: updatedUser._id.toString(),
+                name: updatedUser.fullName,
+                image: updatedUser.profilePic || "",
+            });
+        } catch (streamErr) {
+            console.log("Error syncing updated user to Stream:", streamErr.message);
+        }
+
+        res.status(200).json({ success: true, user: updatedUser });
+    } catch (error) {
+        console.error("Error in updateProfile controller", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+export async function rejectFriendRequest(req, res) {
+    try {
+        const { id: requestId } = req.params;
+
+        const friendRequest = await FriendRequest.findById(requestId);
+        if (!friendRequest) {
+            return res.status(404).json({ message: "Friend request not found" });
+        }
+
+        // Verify the current user is the recipient
+        if (friendRequest.recipient.toString() !== req.user.id) {
+            return res.status(403).json({ message: "You are not authorized to decline this request" });
+        }
+
+        await FriendRequest.findByIdAndDelete(requestId);
+
+        res.status(200).json({ success: true, message: "Friend request declined" });
+    } catch (error) {
+        console.error("Error in rejectFriendRequest controller", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+export async function cancelFriendRequest(req, res) {
+    try {
+        const myId = req.user.id;
+        const { id: targetId } = req.params;
+
+        // targetId can be the requestId or the recipientId
+        const query = {
+            $or: [
+                { _id: targetId, sender: myId, status: "pending" },
+                { recipient: targetId, sender: myId, status: "pending" }
+            ]
+        };
+
+        const deletedRequest = await FriendRequest.findOneAndDelete(query);
+        if (!deletedRequest) {
+            return res.status(404).json({ message: "Pending friend request not found" });
+        }
+
+        res.status(200).json({ success: true, message: "Friend request cancelled" });
+    } catch (error) {
+        console.error("Error in cancelFriendRequest controller", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+export async function unfriendUser(req, res) {
+    try {
+        const myId = req.user.id;
+        const { id: friendId } = req.params;
+
+        await User.findByIdAndUpdate(myId, {
+            $pull: { friends: friendId },
+        });
+
+        await User.findByIdAndUpdate(friendId, {
+            $pull: { friends: myId },
+        });
+
+        // Clean up any friend request records between them
+        await FriendRequest.deleteMany({
+            $or: [
+                { sender: myId, recipient: friendId },
+                { sender: friendId, recipient: myId },
+            ]
+        });
+
+        res.status(200).json({ success: true, message: "User unfriended successfully" });
+    } catch (error) {
+        console.error("Error in unfriendUser controller", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}
 
 export async function getRecommendedUsers(req, res) {
     try {
@@ -147,3 +259,17 @@ export async function getOutgoingFriendReqs(req, res) {
         res.status(500).json({ message: "Internal Server Error" });
     }
 }
+
+export async function getUserById(req, res) {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id).select("-password");
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json(user);
+    } catch (error) {
+        console.error("Error in getUserById controller", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+}

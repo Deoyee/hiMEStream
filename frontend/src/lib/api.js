@@ -15,6 +15,16 @@ export const logout = async () => {
   return response.data;
 };
 
+export const forgotPassword = async (email) => {
+  const response = await axiosInstance.post("/auth/forgot-password", { email });
+  return response.data;
+};
+
+export const resetPassword = async ({ email, otp, newPassword }) => {
+  const response = await axiosInstance.post("/auth/reset-password", { email, otp, newPassword });
+  return response.data;
+};
+
 export const getAuthUser = async () => {
   try {
     const res = await axiosInstance.get('/auth/me');
@@ -57,6 +67,31 @@ export async function getFriendRequests() {
 
 export async function acceptFriendRequest(requestId) {
   const response = await axiosInstance.put(`/users/friend-request/${requestId}/accept`);
+  return response.data;
+}
+
+export async function rejectFriendRequest(requestId) {
+  const response = await axiosInstance.put(`/users/friend-request/${requestId}/reject`);
+  return response.data;
+}
+
+export async function cancelFriendRequest(targetId) {
+  const response = await axiosInstance.delete(`/users/friend-request/${targetId}/cancel`);
+  return response.data;
+}
+
+export async function unfriendUser(friendId) {
+  const response = await axiosInstance.delete(`/users/friends/${friendId}`);
+  return response.data;
+}
+
+export async function updateProfile(profileData) {
+  const response = await axiosInstance.put("/users/profile", profileData);
+  return response.data;
+}
+
+export async function getUserById(userId) {
+  const response = await axiosInstance.get(`/users/${userId}`);
   return response.data;
 }
 

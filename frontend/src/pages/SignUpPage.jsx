@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import useSignUp from "../hooks/useSignUp";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 const SignUpPage = () => {
+  const [showPassword, setShowPassword] = useState(false);
   const [signupData, setSignupData] = useState({
     fullName: "",
     email: "",
@@ -36,7 +38,7 @@ const SignUpPage = () => {
           {/* error msg */}
           {error && (
             <div className="alert alert-error mb-4">
-              <span>{error.response.data.message}</span>
+              <span>{error.response?.data?.message || "An error occurred"}</span>
             </div>
           )}
 
@@ -84,14 +86,28 @@ const SignUpPage = () => {
                     <label className="label">
                       <span className="label-text">Password</span>
                     </label>
-                    <input
-                      type="password"
-                      placeholder="******"
-                      className="input input-bordered w-full"
-                      value={signupData.password}
-                      onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="******"
+                        className="input input-bordered w-full pr-10"
+                        value={signupData.password}
+                        onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/60 hover:text-base-content transition-colors focus:outline-none"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? (
+                          <EyeOffIcon className="size-5" />
+                        ) : (
+                          <EyeIcon className="size-5" />
+                        )}
+                      </button>
+                    </div>
                     <p className="text-xs opacity-70 mt-1">
                       Password must be at least 6 characters long
                     </p>

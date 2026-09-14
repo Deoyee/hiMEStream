@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import useLogin from "../hooks/useLogin";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 
 const LoginPage = () => {
+  const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
@@ -28,7 +30,7 @@ const LoginPage = () => {
           <div className="mb-4 flex items-center justify-start gap-2">
             <img src="/logo.png" alt="hiMEStream logo" className="w-9 h-9 object-contain" />
             <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary  tracking-wider">
-              hiMEStrem
+              hiMEStream
             </span>
           </div>
 
@@ -64,17 +66,39 @@ const LoginPage = () => {
                   </div>
 
                   <div className="form-control w-full space-y-2">
-                    <label className="label">
-                      <span className="label-text">Password</span>
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      className="input input-bordered w-full"
-                      value={loginData.password}
-                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                      required
-                    />
+                    <div className="flex items-center justify-between">
+                      <label className="label p-0">
+                        <span className="label-text">Password</span>
+                      </label>
+                      <Link
+                        to="/forgot-password"
+                        className="text-xs text-primary hover:underline transition-colors"
+                      >
+                        Forgot password?
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••"
+                        className="input input-bordered w-full pr-10"
+                        value={loginData.password}
+                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/60 hover:text-base-content transition-colors focus:outline-none"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? (
+                          <EyeOffIcon className="size-5" />
+                        ) : (
+                          <EyeIcon className="size-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <button type="submit" className="btn btn-primary w-full" disabled={isPending}>
