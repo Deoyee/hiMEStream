@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   StreamVideo,
   StreamVideoClient,
   StreamCall,
   CallControls,
-  SpeakerLayout,
+  PaginatedGridLayout,
   StreamTheme,
   CallingState,
   useCallStateHooks,
@@ -20,19 +20,26 @@ function CallModal({ isOpen, onClose, callId, isAudioOnly, authUser, token }) {
   const [call, setCall] = useState(null);
   const [isConnecting, setIsConnecting] = useState(true);
 
+  const onCloseRef = useRef(onClose);
   useEffect(() => {
-    if (!isOpen || !token || !authUser || !callId) return;
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  const authUserId = String(authUser?._id || authUser?.id || "");
+
+  useEffect(() => {
+    if (!isOpen || !token || !authUserId || !callId) return;
 
     let callInstance = null;
     let videoClient = null;
-    let isCancelled = false;
+    let isDisposed = false;
 
     const initCall = async () => {
       try {
         setIsConnecting(true);
 
         const user = {
-          id: authUser._id,
+          id: authUserId,
           name: authUser.fullName,
           image: authUser.profilePic,
         };
@@ -56,8 +63,11 @@ function CallModal({ isOpen, onClose, callId, isAudioOnly, authUser, token }) {
 
         await callInstance.join({ create: true });
 
-        if (isCancelled) {
-          await callInstance.leave();
+        if (isDisposed) {
+          try {
+            await callInstance.leave();
+            await videoClient.disconnectUser();
+          } catch (e) {}
           return;
         }
 
@@ -73,30 +83,52 @@ function CallModal({ isOpen, onClose, callId, isAudioOnly, authUser, token }) {
         setClient(videoClient);
         setCall(callInstance);
       } catch (error) {
-        console.error("Error joining call:", error);
-        toast.error("Could not join call. Please try again.");
-        onClose();
+        if (!isDisposed) {
+          console.error("Error joining call:", error);
+          toast.error("Could not join call. Please try again.");
+          onCloseRef.current?.();
+        }
       } finally {
-        setIsConnecting(false);
+        if (!isDisposed) {
+          setIsConnecting(false);
+        }
       }
     };
 
     initCall();
 
     return () => {
-      isCancelled = true;
+      isDisposed = true;
       if (callInstance) {
+        try {
+          callInstance.microphone.disable();
+          callInstance.camera.disable();
+        } catch (e) {}
         callInstance.leave().catch((err) => console.warn("Error leaving call on cleanup:", err));
       }
+      if (videoClient) {
+        videoClient.disconnectUser().catch((err) => console.warn("Error disconnecting client on cleanup:", err));
+      }
+      setClient(null);
+      setCall(null);
     };
-  }, [isOpen, token, authUser, callId, isAudioOnly, onClose]);
+  }, [isOpen, token, authUserId, callId, isAudioOnly]);
 
   const handleClose = async () => {
     if (call) {
       try {
+        await call.microphone.disable();
+        await call.camera.disable();
         await call.leave();
       } catch (err) {
         console.warn("Error leaving call on close:", err);
+      }
+    }
+    if (client) {
+      try {
+        await client.disconnectUser();
+      } catch (err) {
+        console.warn("Error disconnecting client on close:", err);
       }
     }
     onClose();
@@ -193,7 +225,7 @@ function CallModalContent({ isAudioOnly, onClose }) {
         </div>
       )}
       <div className="flex-1 w-full min-h-0 flex items-center justify-center overflow-hidden">
-        <SpeakerLayout />
+        <PaginatedGridLayout groupSize={2} />
       </div>
       <div className="flex justify-center pt-2 z-30">
         <CallControls onLeave={onClose} />

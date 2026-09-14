@@ -1,4 +1,4 @@
-import { useState, useId, useMemo } from "react";
+import { useState, useId, useMemo, useEffect } from "react";
 
 // Curated vibrant gradients for initials fallback
 const GRADIENTS = [
@@ -55,6 +55,11 @@ const Avatar = ({
 
   const [currentSrc, setCurrentSrc] = useState(initialUrl);
   const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setCurrentSrc(initialUrl);
+    setHasError(false);
+  }, [initialUrl]);
 
   const handleError = () => {
     // If original src failed and wasn't dicebear yet, try dicebear

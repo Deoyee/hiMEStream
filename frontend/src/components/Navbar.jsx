@@ -1,7 +1,7 @@
 import useAuthUser from "../hooks/useAuthUser";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { BellIcon, LogOutIcon, ChevronLeft, Menu, X, HomeIcon, UsersIcon } from "lucide-react";
+import { BellIcon, LogOutIcon, ChevronLeft, Menu, X, HomeIcon, UsersIcon, UserIcon } from "lucide-react";
 import useLogOut from "../hooks/useLogOut";
 import ThemeSelector from "./ThemeSelector.jsx";
 import Avatar from "./Avatar.jsx";
@@ -29,6 +29,7 @@ const Navbar = ({ showSidebar = false }) => {
     { name: "Home", path: "/", icon: HomeIcon },
     { name: "Friends", path: "/friends", icon: UsersIcon },
     { name: "Notifications", path: "/notifications", icon: BellIcon, badge: friendRequestsCount },
+    { name: "Edit Profile", path: "/profile", icon: UserIcon },
   ];
 
   return (
@@ -96,10 +97,10 @@ const Navbar = ({ showSidebar = false }) => {
 
             <ThemeSelector />
 
-            <div
-              className="flex items-center gap-2 pl-1.5 border-l border-base-content/10 cursor-pointer"
-              onClick={() => setMobileOpen(true)}
-              title="Open menu"
+            <Link
+              to="/profile"
+              className="hidden sm:flex items-center gap-2 pl-1.5 border-l border-base-content/10 hover:opacity-85 transition-opacity"
+              title="Edit Profile"
             >
               <Avatar
                 src={authUser?.profilePic}
@@ -112,6 +113,21 @@ const Navbar = ({ showSidebar = false }) => {
               <span className="hidden md:inline-block text-sm font-medium text-base-content/90 truncate max-w-[130px]">
                 {authUser?.fullName}
               </span>
+            </Link>
+
+            <div
+              className="flex sm:hidden items-center pl-1.5 border-l border-base-content/10 cursor-pointer"
+              onClick={() => setMobileOpen(true)}
+              title="Open menu"
+            >
+              <Avatar
+                src={authUser?.profilePic}
+                name={authUser?.fullName}
+                size="sm"
+                ring={true}
+                showOnline={true}
+                isOnline={true}
+              />
             </div>
 
             {/* Logout button (desktop only) */}
@@ -163,7 +179,12 @@ const Navbar = ({ showSidebar = false }) => {
               </div>
 
               {/* User Profile Card */}
-              <div className="p-3.5 rounded-2xl bg-base-300/60 border border-base-content/10 mb-5 flex items-center gap-3">
+              <Link
+                to="/profile"
+                onClick={() => setMobileOpen(false)}
+                className="p-3.5 rounded-2xl bg-base-300/60 hover:bg-base-300 border border-base-content/10 mb-5 flex items-center gap-3 transition-colors group cursor-pointer"
+                title="Edit Profile"
+              >
                 <Avatar
                   src={authUser?.profilePic}
                   name={authUser?.fullName}
@@ -173,15 +194,15 @@ const Navbar = ({ showSidebar = false }) => {
                   isOnline={true}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="font-bold text-sm text-base-content truncate">
+                  <p className="font-bold text-sm text-base-content group-hover:text-primary transition-colors truncate">
                     {authUser?.fullName}
                   </p>
                   <p className="text-xs text-emerald-400 flex items-center gap-1 mt-0.5 font-medium">
                     <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
-                    Online
+                    Edit Profile
                   </p>
                 </div>
-              </div>
+              </Link>
 
               {/* Navigation Items with Icons & Active State */}
               <nav className="space-y-1.5">

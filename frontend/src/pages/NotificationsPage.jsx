@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { acceptFriendRequest, getFriendRequests } from "../lib/api";
-import { BellIcon, ClockIcon, MessageSquareIcon, UserCheckIcon } from "lucide-react";
+import { acceptFriendRequest, rejectFriendRequest, getFriendRequests } from "../lib/api";
+import { BellIcon, ClockIcon, MessageSquareIcon, UserCheckIcon, X, Check } from "lucide-react";
+import toast from "react-hot-toast";
 import NoNotificationsFound from "../components/NoNotificationsFound";
 import Avatar from "../components/Avatar.jsx";
 
@@ -15,8 +16,23 @@ const NotificationsPage = () => {
   const { mutate: acceptRequestMutation, isPending } = useMutation({
     mutationFn: acceptFriendRequest,
     onSuccess: () => {
+      toast.success("Friend request accepted!");
       queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
       queryClient.invalidateQueries({ queryKey: ["friends"] });
+    },
+    onError: () => {
+      toast.error("Failed to accept request");
+    },
+  });
+
+  const { mutate: rejectRequestMutation, isPending: isRejecting } = useMutation({
+    mutationFn: rejectFriendRequest,
+    onSuccess: () => {
+      toast.success("Friend request declined");
+      queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
+    },
+    onError: () => {
+      toast.error("Failed to decline request");
     },
   });
 
@@ -74,13 +90,22 @@ const NotificationsPage = () => {
                           </div>
                         </div>
 
-                        <button
-                          className="btn btn-primary btn-sm rounded-xl font-medium px-4 shadow-sm active:scale-[0.98]"
-                          onClick={() => acceptRequestMutation(request._id)}
-                          disabled={isPending}
-                        >
-                          Accept
-                        </button>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            className="btn btn-outline btn-error btn-sm rounded-xl font-medium px-3.5 shadow-sm active:scale-[0.98]"
+                            onClick={() => rejectRequestMutation(request._id)}
+                            disabled={isPending || isRejecting}
+                          >
+                            Decline
+                          </button>
+                          <button
+                            className="btn btn-primary btn-sm rounded-xl font-medium px-4 shadow-sm active:scale-[0.98]"
+                            onClick={() => acceptRequestMutation(request._id)}
+                            disabled={isPending || isRejecting}
+                          >
+                            Accept
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

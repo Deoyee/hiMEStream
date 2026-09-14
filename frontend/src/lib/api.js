@@ -70,6 +70,31 @@ export async function acceptFriendRequest(requestId) {
   return response.data;
 }
 
+export async function rejectFriendRequest(requestId) {
+  const response = await axiosInstance.put(`/users/friend-request/${requestId}/reject`);
+  return response.data;
+}
+
+export async function cancelFriendRequest(targetId) {
+  const response = await axiosInstance.delete(`/users/friend-request/${targetId}/cancel`);
+  return response.data;
+}
+
+export async function unfriendUser(friendId) {
+  const response = await axiosInstance.delete(`/users/friends/${friendId}`);
+  return response.data;
+}
+
+export async function updateProfile(profileData) {
+  const response = await axiosInstance.put("/users/profile", profileData);
+  return response.data;
+}
+
+export async function getUserById(userId) {
+  const response = await axiosInstance.get(`/users/${userId}`);
+  return response.data;
+}
+
 export async function getStreamToken() {
   const response = await axiosInstance.get("/chat/token");
   return response.data;

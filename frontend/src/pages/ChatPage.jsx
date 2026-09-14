@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
   Channel,
@@ -9,18 +9,19 @@ import {
   Chat,
   MessageInput,
   MessageList,
+  MessageSimple,
   Thread,
   Window,
 } from "stream-chat-react";
 import { StreamChat } from "stream-chat";
-import { getStreamToken } from "../lib/api.js";
+import { getStreamToken, getUserById, getUserFriends, unfriendUser } from "../lib/api.js";
 import ChatLoader from "../components/ChatLoader.jsx";
 import CallButton from "../components/CallButton.jsx";
 import CallModal from "../components/CallModal.jsx";
-
+import CallMessage from "../components/CallMessage.jsx";
+import UserProfileModal from "../components/UserProfileModal.jsx";
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
-// If you need to declare that a given property exists on import.meta, this type may be augmented via interface merging.
 
 const ChatPage = () => {
   const { id: targetUserId } = useParams();
@@ -29,16 +30,43 @@ const ChatPage = () => {
   const [channel, setChannel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeCall, setActiveCall] = useState(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
+  const queryClient = useQueryClient();
   const { authUser } = useAuthUser();
 
   const { data: tokenData } = useQuery({
     queryKey: ["streamToken"],
     queryFn: getStreamToken,
-    enabled: !!authUser, // this will run only when authUser is available
+    enabled: !!authUser,
   });
 
-  // Intercept click on any call link in the chat to open in modal instead of new tab
+  const { data: partnerUser } = useQuery({
+    queryKey: ["user", targetUserId],
+    queryFn: () => getUserById(targetUserId),
+    enabled: !!targetUserId,
+  });
+
+  const { data: friends = [] } = useQuery({
+    queryKey: ["friends"],
+    queryFn: getUserFriends,
+  });
+
+  const isFriend = Array.isArray(friends) && friends.some((f) => f._id === targetUserId);
+
+  const unfriendMutation = useMutation({
+    mutationFn: unfriendUser,
+    onSuccess: () => {
+      toast.success("Unfriended successfully");
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["user", targetUserId] });
+    },
+    onError: () => {
+      toast.error("Failed to unfriend user");
+    },
+  });
+
+  // Intercept click on call links to open in modal, and click on header to open profile modal
   useEffect(() => {
     const handleChatClick = (e) => {
       const anchor = e.target.closest("a");
@@ -57,6 +85,12 @@ const ChatPage = () => {
         } catch {
           // ignore
         }
+      }
+
+      // Check if clicked on channel header (avatar or name) but not buttons
+      const header = e.target.closest(".str-chat__header-channel");
+      if (header && !e.target.closest("button") && !e.target.closest(".btn")) {
+        setIsProfileModalOpen(true);
       }
     };
 
@@ -182,31 +216,93 @@ const ChatPage = () => {
     initChat();
   }, [tokenData, authUser, targetUserId]);
 
-  const handleVideoCall = () => {
+  const handleCloseCall = useCallback(() => {
+    setActiveCall(null);
+  }, []);
+
+  const handleVideoCall = useCallback(() => {
     if (channel) {
-      const callUrl = `${window.location.origin}/call/${channel.id}`;
+      const callSessionId = `${channel.id}-${Date.now()}`;
 
       channel.sendMessage({
-        text: `📹 I've started a video call. Join here:\n${callUrl}`,
+        text: "📹 Video call",
+        call_id: callSessionId,
+        call_type: "video",
+        call_status: "started",
       });
 
       toast.success("Video call started!");
-      setActiveCall({ callId: channel.id, isAudioOnly: false });
+      setActiveCall({ callId: callSessionId, isAudioOnly: false });
     }
-  };
+  }, [channel]);
 
-  const handleVoiceCall = () => {
+  const handleVoiceCall = useCallback(() => {
     if (channel) {
-      const callUrl = `${window.location.origin}/call/${channel.id}?type=audio`;
+      const callSessionId = `${channel.id}-${Date.now()}`;
 
       channel.sendMessage({
-        text: `📞 I've started a voice call. Join here:\n${callUrl}`,
+        text: "📞 Voice call",
+        call_id: callSessionId,
+        call_type: "audio",
+        call_status: "started",
       });
 
       toast.success("Voice call started!");
-      setActiveCall({ callId: channel.id, isAudioOnly: true });
+      setActiveCall({ callId: callSessionId, isAudioOnly: true });
     }
-  };
+  }, [channel]);
+
+  const CustomMessage = useCallback(
+    (props) => {
+      const { message, isMyMessage } = props;
+      const text = message?.text || "";
+      const isCall =
+        Boolean(message?.call_id) ||
+        Boolean(message?.call_type) ||
+        message?.custom_type === "call" ||
+        text.includes("/call/") ||
+        text.startsWith("📞") ||
+        text.startsWith("📹") ||
+        (text.toLowerCase().includes("call") &&
+          (text.toLowerCase().includes("voice") ||
+            text.toLowerCase().includes("video") ||
+            text.toLowerCase().includes("started") ||
+            text.toLowerCase().includes("missed")));
+
+      if (isCall) {
+        return (
+          <CallMessage
+            message={message}
+            isMyMessage={isMyMessage}
+            onCallBack={(isAudio) => {
+              if (isAudio) {
+                handleVoiceCall();
+              } else {
+                handleVideoCall();
+              }
+            }}
+          />
+        );
+      }
+
+      return <MessageSimple {...props} />;
+    },
+    [handleVoiceCall, handleVideoCall]
+  );
+
+  const audioRecordingConfig = useMemo(
+    () => ({
+      mediaRecorderConfig: {
+        audioBitsPerSecond: 128000,
+      },
+      transcoderConfig: {
+        sampleRate: 48000,
+        // Pass-through encoder preserves native 48kHz WebM/Opus audio, eliminating 16kHz downsampling stutters and skipped audio
+        encoder: async (file) => file,
+      },
+    }),
+    []
+  );
 
   if (loading || !chatClient || !channel) return <ChatLoader />;
 
@@ -215,12 +311,20 @@ const ChatPage = () => {
       <Chat client={chatClient} theme="str-chat__theme-dark">
         <Channel channel={channel}>
           <div className="w-full h-full relative flex flex-col flex-1 min-h-0">
-            <CallButton handleVideoCall={handleVideoCall} handleVoiceCall={handleVoiceCall} />
+            <CallButton
+              handleVideoCall={handleVideoCall}
+              handleVoiceCall={handleVoiceCall}
+              handleViewProfile={() => setIsProfileModalOpen(true)}
+            />
             <Window>
               <ChannelHeader />
-              <MessageList />
+              <MessageList Message={CustomMessage} />
               <div className="relative flex flex-col">
-                <MessageInput focus />
+                <MessageInput
+                  focus
+                  audioRecordingEnabled={true}
+                  audioRecordingConfig={audioRecordingConfig}
+                />
                 <div className="px-4 py-1.5 flex items-center justify-between text-[11px] text-gray-400 bg-[#191515] border-t border-white/5 select-none">
                   <span className="flex items-center gap-1.5">
                     <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -243,11 +347,31 @@ const ChatPage = () => {
       {activeCall && (
         <CallModal
           isOpen={!!activeCall}
-          onClose={() => setActiveCall(null)}
+          onClose={handleCloseCall}
           callId={activeCall.callId}
           isAudioOnly={activeCall.isAudioOnly}
           authUser={authUser}
           token={tokenData?.token}
+        />
+      )}
+
+      {/* User Profile Modal */}
+      {isProfileModalOpen && (
+        <UserProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          user={
+            partnerUser ||
+            (channel?.state?.members?.[targetUserId]?.user
+              ? {
+                  _id: targetUserId,
+                  fullName: channel.state.members[targetUserId].user.name,
+                  profilePic: channel.state.members[targetUserId].user.image,
+                }
+              : null)
+          }
+          isFriend={isFriend}
+          onUnfriend={(u) => unfriendMutation.mutate(u._id)}
         />
       )}
     </div>

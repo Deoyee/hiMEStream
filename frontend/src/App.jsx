@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import NotificationsPage from "./pages/NotificationsPage.jsx";
 import FriendsPage from "./pages/FriendsPage.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
 import CallPage from "./pages/CallPage.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
 import OnboardingPage from "./pages/OnboardingPage.jsx";
@@ -12,6 +13,7 @@ import { Toaster } from "react-hot-toast";
 import PageLoader from "./components/PageLoader.jsx";
 import useAuthUser from "./hooks/useAuthUser.js";
 import Layout from "./components/Layout.jsx";
+import IncomingCallManager from "./components/IncomingCallManager.jsx";
 import { useThemeStore } from "./store/useThemeStore.js";
 
 const App = () => {
@@ -89,6 +91,19 @@ const App = () => {
         />
 
         <Route
+          path="/profile"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <Layout showSidebar={true}>
+                <ProfilePage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+
+        <Route
           path="/call/:id"
           element={
             isAuthenticated && isOnboarded ? (
@@ -128,6 +143,7 @@ const App = () => {
         />
       </Routes>
 
+      {isAuthenticated && isOnboarded && <IncomingCallManager />}
       <Toaster />
     </div>
   );

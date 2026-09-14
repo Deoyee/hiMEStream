@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
-import { BellIcon, HomeIcon, UsersIcon } from "lucide-react";
+import { BellIcon, HomeIcon, UsersIcon, UserIcon } from "lucide-react";
 import Avatar from "./Avatar.jsx";
 
 const Sidebar = () => {
@@ -12,6 +12,7 @@ const Sidebar = () => {
     { name: "Home", path: "/", icon: HomeIcon },
     { name: "Friends", path: "/friends", icon: UsersIcon },
     { name: "Notifications", path: "/notifications", icon: BellIcon },
+    { name: "Profile", path: "/profile", icon: UserIcon },
   ];
 
   return (
@@ -50,7 +51,11 @@ const Sidebar = () => {
 
       {/* User Profile Footer */}
       <div className="p-4 border-t border-base-300 mt-auto">
-        <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-base-300/40 border border-base-content/5 hover:border-primary/20 transition-colors">
+        <Link
+          to="/profile"
+          className="flex items-center gap-3 p-2.5 rounded-2xl bg-base-300/40 border border-base-content/5 hover:border-primary/40 hover:bg-base-300/80 transition-all cursor-pointer group"
+          title="Edit Profile"
+        >
           <Avatar
             src={authUser?.profilePic}
             name={authUser?.fullName}
@@ -60,15 +65,15 @@ const Sidebar = () => {
             isOnline={true}
           />
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-base-content truncate">
+            <p className="font-semibold text-sm text-base-content group-hover:text-primary transition-colors truncate">
               {authUser?.fullName}
             </p>
             <p className="text-xs text-emerald-400 flex items-center gap-1 mt-0.5">
               <span className="size-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
-              <span>Online</span>
+              <span>Edit Profile</span>
             </p>
           </div>
-        </div>
+        </Link>
       </div>
     </aside>
   );

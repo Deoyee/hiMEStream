@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { getUserFriends, getChatHistory } from "../lib/api";
@@ -6,8 +7,10 @@ import { formatDate } from "../lib/utils";
 import FriendCard from "../components/FriendCard";
 import Avatar from "../components/Avatar.jsx";
 import useOnlineUsers from "../hooks/useOnlineUsers";
+import UserProfileModal from "../components/UserProfileModal.jsx";
 
 const FriendsPage = () => {
+  const [selectedFriend, setSelectedFriend] = useState(null);
   const { isUserOnline } = useOnlineUsers();
   const { data: friends = [], isLoading: loadingFriends } = useQuery({
     queryKey: ["friends"],
@@ -92,25 +95,37 @@ const FriendsPage = () => {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold mb-3">All friends</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {friends.map((friend) => (
-              <div key={friend._id}>
-                {/* highlight if they appear in chatHistory */}
-                {chattedUserIds.has(friend._id) ? (
-                  <div className="card border border-primary">
-                    <div className="card-body">
-                      <FriendCard friend={friend} />
-                    </div>
-                  </div>
-                ) : (
-                  <FriendCard friend={friend} />
-                )}
-              </div>
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">All friends ({friends.length})</h2>
           </div>
+          {friends.length === 0 ? (
+            <div className="card bg-base-200/60 border border-base-content/10 p-8 rounded-2xl text-center">
+              <p className="opacity-70 text-sm">No friends added yet. Meet learners from the home page!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {friends.map((friend) => (
+                <FriendCard
+                  key={friend._id}
+                  friend={friend}
+                  onViewProfile={setSelectedFriend}
+                  hasChatHistory={chattedUserIds.has(friend._id)}
+                />
+              ))}
+            </div>
+          )}
         </section>
       </div>
+
+      {/* User Profile Modal */}
+      {selectedFriend && (
+        <UserProfileModal
+          isOpen={!!selectedFriend}
+          onClose={() => setSelectedFriend(null)}
+          user={selectedFriend}
+          isFriend={true}
+        />
+      )}
     </div>
   );
 };

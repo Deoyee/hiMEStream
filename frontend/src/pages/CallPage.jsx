@@ -9,7 +9,7 @@ import {
   StreamVideoClient,
   StreamCall,
   CallControls,
-  SpeakerLayout,
+  PaginatedGridLayout,
   StreamTheme,
   CallingState,
   useCallStateHooks,
@@ -36,25 +36,28 @@ const CallPage = () => {
   });
 
   useEffect(() => {
+    let videoClient = null;
+    let callInstance = null;
+
     const initCall = async () => {
-      if (!tokenData.token || !authUser || !callId) return;
+      if (!tokenData?.token || !authUser || !callId) return;
 
       try {
         console.log("Initializing Stream video client...");
 
         const user = {
-          id: authUser._id,
+          id: String(authUser._id || authUser.id),
           name: authUser.fullName,
           image: authUser.profilePic,
         };
 
-        const videoClient = new StreamVideoClient({
+        videoClient = new StreamVideoClient({
           apiKey: STREAM_API_KEY,
           user,
           token: tokenData.token,
         });
 
-        const callInstance = videoClient.call("default", callId);
+        callInstance = videoClient.call("default", callId);
 
         const searchParams = new URLSearchParams(window.location.search);
         const isAudioOnly = searchParams.get("type") === "audio";
@@ -91,7 +94,20 @@ const CallPage = () => {
     };
 
     initCall();
-  }, [tokenData, authUser, callId]);
+
+    return () => {
+      if (callInstance) {
+        try {
+          callInstance.microphone.disable();
+          callInstance.camera.disable();
+        } catch (e) {}
+        callInstance.leave().catch((err) => console.warn("Error leaving call on cleanup:", err));
+      }
+      if (videoClient) {
+        videoClient.disconnectUser().catch((err) => console.warn("Error disconnecting client on cleanup:", err));
+      }
+    };
+  }, [tokenData?.token, authUser?._id, callId]);
 
   if (isLoading || isConnecting) return <PageLoader />;
 
@@ -152,7 +168,7 @@ const CallContent = () => {
           <span>Voice Call</span>
         </div>
       )}
-      <SpeakerLayout />
+      <PaginatedGridLayout groupSize={2} />
       <CallControls />
     </StreamTheme>
   );

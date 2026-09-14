@@ -64,12 +64,14 @@
   border-left: none !important;
   border-right: none !important;
   color: #f3f4f6 !important;
-  padding: 10px 96px 10px 16px !important;
+  padding: 10px 140px 10px 16px !important;
   min-height: 56px !important;
+  cursor: pointer !important;
+  user-select: none !important;
 }
 
-.str-chat__header-channel-left {
-  gap: 12px;
+.str-chat__header-channel-left:hover {
+  opacity: 0.88;
 }
 
 .str-chat__header-channel .str-chat__header-title {
@@ -375,6 +377,141 @@
 
 .str-chat__message-textarea-with-emoji-picker textarea {
   color: #f3f4f6 !important;
+}
+
+/* Voice Notes & Audio Recording styling */
+.str-chat__start-recording-audio-button {
+  color: #10b981 !important;
+  transition: all 0.15s ease !important;
+}
+
+.str-chat__start-recording-audio-button:hover {
+  color: #34d399 !important;
+  transform: scale(1.1) !important;
+}
+
+.str-chat__audio_recorder-container {
+  background-color: transparent !important;
+  padding: 8px 12px !important;
+}
+
+.str-chat__audio_recorder {
+  background-color: #241e1e !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 9999px !important;
+  color: #f3f4f6 !important;
+  padding: 4px 8px 4px 14px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  max-width: 100% !important;
+}
+
+.str-chat__audio_recorder__waveform {
+  --str-chat__waveform-color: #10b981 !important;
+}
+
+.str-chat__audio_recorder__cancel-button {
+  color: #ef4444 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.15s ease !important;
+}
+
+.str-chat__audio_recorder__cancel-button:hover {
+  transform: scale(1.15) !important;
+}
+
+.str-chat__audio_recorder__cancel-button svg path {
+  fill: #ef4444 !important;
+}
+
+.str-chat__audio_recorder__toggle-playback-button,
+.str-chat__audio_recorder__pause-recording-button,
+.str-chat__audio_recorder__resume-recording-button {
+  color: #f3f4f6 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.str-chat__audio_recorder__toggle-playback-button svg path,
+.str-chat__audio_recorder__pause-recording-button svg path,
+.str-chat__audio_recorder__resume-recording-button svg path {
+  fill: #f3f4f6 !important;
+}
+
+.str-chat__recording-timer {
+  color: #f3f4f6 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+}
+
+/* Complete & Stop Send Button (Green circle with CRISP WHITE check/arrow inside!) */
+.str-chat__audio_recorder__stop-button,
+.str-chat__audio_recorder__complete-button {
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.45) !important;
+  transition: all 0.15s ease !important;
+}
+
+.str-chat__audio_recorder__stop-button:hover,
+.str-chat__audio_recorder__complete-button:hover {
+  background-color: #059669 !important;
+  transform: scale(1.08) !important;
+}
+
+.str-chat__audio_recorder__stop-button svg,
+.str-chat__audio_recorder__complete-button svg,
+.str-chat__audio_recorder__stop-button svg path,
+.str-chat__audio_recorder__complete-button svg path {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+/* Waveform progress bar & smooth gliding seeker */
+.str-chat__wave-progress-bar__progress-indicator {
+  transition: left 0.12s linear !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.7) !important;
+}
+
+.str-chat__wave-progress-bar__amplitude-bar {
+  transition: background-color 0.12s ease !important;
+}
+
+.str-chat__wave-progress-bar__amplitude-bar--active {
+  background-color: #10b981 !important;
+}
+
+/* Audio attachment player inside messages */
+.str-chat__message-attachment-audio-widget,
+.str-chat__message-attachment-audio-player {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-radius: 16px !important;
+  padding: 8px 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.str-chat__message-attachment-audio-widget--play-button {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border-radius: 50% !important;
+}
+
+.str-chat__message-attachment-audio-widget--play-button svg path {
+  fill: #ffffff !important;
 }
 
 /* ============================================================
