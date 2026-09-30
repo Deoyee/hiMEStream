@@ -4,7 +4,7 @@ let transporter = null;
 
 export const getTransporter = async () => {
     const host = process.env.SMTP_HOST;
-    const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
+    const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
     const user = (process.env.SMTP_USER || process.env.EMAIL_USER || "").trim();
     const pass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || "").replace(/\s+/g, "");
 
@@ -17,9 +17,18 @@ export const getTransporter = async () => {
 
         const isGmail = host?.includes("gmail") || user.endsWith("@gmail.com");
         if (isGmail) {
+            // Port 465 with SSL is universally allowed on cloud platforms (Render, Railway, etc.)
             transporter = nodemailer.createTransport({
-                service: "gmail",
+                host: "smtp.gmail.com",
+                port: 465,
+                secure: true,
                 auth: { user, pass },
+                connectionTimeout: 15000,
+                greetingTimeout: 15000,
+                socketTimeout: 20000,
+                tls: {
+                    rejectUnauthorized: false,
+                },
             });
         } else {
             transporter = nodemailer.createTransport({
@@ -27,10 +36,21 @@ export const getTransporter = async () => {
                 port: port,
                 secure: process.env.SMTP_SECURE === "true" || port === 465,
                 auth: { user, pass },
+                connectionTimeout: 15000,
+                greetingTimeout: 15000,
+                socketTimeout: 20000,
+                tls: {
+                    rejectUnauthorized: false,
+                },
             });
         }
         transporter.__isTestAccount = false;
         return transporter;
+    }
+
+    // In production, missing credentials must throw immediately with clear instructions
+    if (process.env.NODE_ENV === "production") {
+        throw new Error("SMTP credentials missing. Please set SMTP_USER and SMTP_PASS in your deployment environment variables.");
     }
 
     if (transporter) return transporter;
@@ -52,7 +72,7 @@ export const getTransporter = async () => {
         return transporter;
     } catch (err) {
         console.error("[MAIL SERVICE] Failed to create test email account:", err.message);
-        return null;
+        throw new Error("Unable to initialize email transporter: " + err.message);
     }
 };
 

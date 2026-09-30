@@ -178,8 +178,12 @@ export async function forgotPassword(req, res) {
         try {
             await sendPasswordResetEmail(user.email, otp);
         } catch (emailErr) {
-            console.error("Failed to send reset email:", emailErr.message);
-            return res.status(500).json({ message: "Failed to send verification email. Please try again later." });
+            console.error("Failed to send reset email:", emailErr);
+            const isMissingConfig = !process.env.SMTP_USER || !process.env.SMTP_PASS;
+            const message = isMissingConfig
+                ? "Email service not configured: SMTP_USER and SMTP_PASS are missing from deployment environment variables."
+                : (emailErr.message || "Failed to send verification email. Please try again later.");
+            return res.status(500).json({ message });
         }
 
         return res.status(200).json({
