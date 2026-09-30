@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import Avatar from "./Avatar.jsx";
 import { getLanguageFlag } from "../lib/languageUtils.jsx";
 import useOnlineUsers from "../hooks/useOnlineUsers";
-import { formatDate } from "../lib/utils";
+import { formatDate, capitialize } from "../lib/utils";
 
 const UserProfileModal = ({
   isOpen,
@@ -95,7 +95,7 @@ const UserProfileModal = ({
               </span>
               <span className="font-bold text-sm text-base-content flex items-center gap-2 mt-0.5">
                 <span className="text-base">{getLanguageFlag(user.nativeLanguage)}</span>
-                <span className="truncate">{user.nativeLanguage || "Not specified"}</span>
+                <span className="truncate">{capitialize(user.nativeLanguage) || "Not specified"}</span>
               </span>
             </div>
 
@@ -106,7 +106,7 @@ const UserProfileModal = ({
               </span>
               <span className="font-bold text-sm text-base-content flex items-center gap-2 mt-0.5">
                 <span className="text-base">{getLanguageFlag(user.learningLanguage)}</span>
-                <span className="truncate">{user.learningLanguage || "Not specified"}</span>
+                <span className="truncate">{capitialize(user.learningLanguage) || "Not specified"}</span>
               </span>
             </div>
           </div>

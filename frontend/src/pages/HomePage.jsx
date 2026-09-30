@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getOutgoingFriendReqs,
   getRecommendedUsers,
@@ -131,28 +131,64 @@ const HomePage = () => {
 
   const isRequested = (id) => outgoingRequestsIds.has(id);
 
-  // Filter recommended users
+  // Collect all available languages from standard list and active recommended users
+  const availableLanguages = useMemo(() => {
+    const langMap = new Map();
+    // Standard supported languages
+    LANGUAGES.forEach((lang) => {
+      langMap.set(lang.toLowerCase(), capitialize(lang));
+    });
+    // Add any languages present on learners in recommendedUsers
+    recommendedUsers.forEach((user) => {
+      if (user.nativeLanguage?.trim()) {
+        const clean = user.nativeLanguage.trim();
+        langMap.set(clean.toLowerCase(), capitialize(clean));
+      }
+      if (user.learningLanguage?.trim()) {
+        const clean = user.learningLanguage.trim();
+        langMap.set(clean.toLowerCase(), capitialize(clean));
+      }
+    });
+    return Array.from(langMap.values()).sort((a, b) => a.localeCompare(b));
+  }, [recommendedUsers]);
+
+  // Filter recommended users: search by name and city/location; dropdown filters by native/learning languages
   const filteredUsers = recommendedUsers.filter((user) => {
+    // 1. Search by name and city/location
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchName = user.fullName?.toLowerCase().includes(q);
-      const matchLoc = user.location?.toLowerCase().includes(q);
-      const matchBio = user.bio?.toLowerCase().includes(q);
-      if (!matchName && !matchLoc && !matchBio) return false;
+      const tokens = searchQuery
+        .trim()
+        .toLowerCase()
+        .split(/[\s,]+/)
+        .filter(Boolean);
+
+      const name = (user.fullName || '').toLowerCase();
+      const location = (user.location || '').toLowerCase();
+      const city = (user.city || '').toLowerCase();
+      const searchable = `${name} ${location} ${city}`;
+
+      const matchesAllTokens = tokens.every((token) => searchable.includes(token));
+      if (!matchesAllTokens) return false;
     }
 
-    if (filterNative && user.nativeLanguage !== filterNative) {
+    // Helper for case-insensitive and trimmed language matching
+    const normalizeLang = (lang) => (lang ? lang.trim().toLowerCase() : '');
+
+    // 2. Native Language filter
+    if (filterNative && normalizeLang(user.nativeLanguage) !== normalizeLang(filterNative)) {
       return false;
     }
 
-    if (filterLearning && user.learningLanguage !== filterLearning) {
+    // 3. Learning Language filter
+    if (filterLearning && normalizeLang(user.learningLanguage) !== normalizeLang(filterLearning)) {
       return false;
     }
 
+    // 4. Perfect Language Match filter
     if (perfectMatchOnly && authUser) {
       const isPerfect =
-        user.nativeLanguage === authUser.learningLanguage &&
-        user.learningLanguage === authUser.nativeLanguage;
+        normalizeLang(user.nativeLanguage) === normalizeLang(authUser.learningLanguage) &&
+        normalizeLang(user.learningLanguage) === normalizeLang(authUser.nativeLanguage);
       if (!isPerfect) return false;
     }
 
@@ -298,7 +334,8 @@ const HomePage = () => {
                   icon={Languages}
                   value={filterNative}
                   onChange={setFilterNative}
-                  languages={LANGUAGES}
+                  languages={availableLanguages}
+                  placeholder="All"
                 />
               </div>
 
@@ -309,7 +346,8 @@ const HomePage = () => {
                   icon={Globe2}
                   value={filterLearning}
                   onChange={setFilterLearning}
-                  languages={LANGUAGES}
+                  languages={availableLanguages}
+                  placeholder="All"
                 />
               </div>
 
