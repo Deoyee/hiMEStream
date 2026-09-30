@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Search, X, Check, Globe } from 'lucide-react';
 import { getLanguageFlag } from '../lib/languageUtils.jsx';
+import { capitialize } from '../lib/utils';
 
 const LanguageDropdown = ({
   prefix = '',
@@ -8,7 +9,7 @@ const LanguageDropdown = ({
   value = '',
   onChange,
   languages = [],
-  placeholder = 'All Languages',
+  placeholder = prefix ? 'All' : 'All Languages',
   showAllOption = true,
   allowClear = true,
 }) => {
@@ -44,7 +45,7 @@ const LanguageDropdown = ({
   }, [isOpen]);
 
   const filteredLanguages = languages.filter((lang) =>
-    lang.toLowerCase().includes(searchTerm.toLowerCase())
+    lang.toLowerCase().includes(searchTerm.toLowerCase().trim())
   );
 
   const handleSelect = (lang) => {
@@ -59,6 +60,12 @@ const LanguageDropdown = ({
     setSearchTerm('');
   };
 
+  // Find formatted display label for the selected value
+  const matchedLang = value
+    ? languages.find((lang) => lang.toLowerCase() === value.toLowerCase().trim()) || capitialize(value)
+    : '';
+  const displayLabel = matchedLang || placeholder;
+
   return (
     <div ref={dropdownRef} className="relative w-full select-none">
       {/* Trigger Button */}
@@ -72,6 +79,7 @@ const LanguageDropdown = ({
         }`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        title={prefix ? `${prefix}: ${displayLabel}` : displayLabel}
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {value ? (
@@ -89,7 +97,7 @@ const LanguageDropdown = ({
               </span>
             )}
             <span className={value ? 'font-semibold text-base-content' : 'opacity-60 text-base-content'}>
-              {value || placeholder}
+              {displayLabel}
             </span>
           </div>
         </div>
@@ -170,14 +178,13 @@ const LanguageDropdown = ({
                 <div className="h-px bg-base-content/10 my-1 mx-1" />
               </>
             )}
-
             {filteredLanguages.length === 0 ? (
               <div className="py-4 text-center text-xs opacity-50 text-base-content">
                 No languages match "{searchTerm}"
               </div>
             ) : (
               filteredLanguages.map((lang) => {
-                const isSelected = value === lang;
+                const isSelected = !!value && value.trim().toLowerCase() === lang.trim().toLowerCase();
                 return (
                   <button
                     key={lang}

@@ -6,6 +6,7 @@ import Avatar from "./Avatar.jsx";
 import useOnlineUsers from "../hooks/useOnlineUsers";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { unfriendUser } from "../lib/api";
+import { capitialize } from "../lib/utils";
 import toast from "react-hot-toast";
 
 const FriendCard = ({ friend, onViewProfile, hasChatHistory = false }) => {
@@ -70,12 +71,12 @@ const FriendCard = ({ friend, onViewProfile, hasChatHistory = false }) => {
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             <span>{getLanguageFlag(friend.nativeLanguage)}</span>
-            <span className="truncate">Native: {friend.nativeLanguage}</span>
+            <span className="truncate">Native: {capitialize(friend.nativeLanguage)}</span>
           </span>
 
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
             <span>{getLanguageFlag(friend.learningLanguage)}</span>
-            <span className="truncate">Learning: {friend.learningLanguage}</span>
+            <span className="truncate">Learning: {capitialize(friend.learningLanguage)}</span>
           </span>
         </div>
 
