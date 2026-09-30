@@ -40,3 +40,4 @@ app.listen(PORT, () => {
     console.log("hiMEStream Server Running", PORT);
     connectDB();
 });
+// Nodemon reloaded for mail configuration

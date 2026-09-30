@@ -15,7 +15,6 @@ const ForgotPasswordPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [devOtp, setDevOtp] = useState(null);
 
   const handleRequestOtp = async (e) => {
     e.preventDefault();
@@ -28,11 +27,8 @@ const ForgotPasswordPage = () => {
 
     try {
       setIsLoading(true);
-      const res = await forgotPassword(email.trim());
-      if (res.devOtp) {
-        setDevOtp(res.devOtp);
-      }
-      toast.success("Verification code sent!");
+      await forgotPassword(email.trim());
+      toast.success("Verification code sent to your email!");
       setStep(2);
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to send verification code";
@@ -85,11 +81,8 @@ const ForgotPasswordPage = () => {
     setError("");
     try {
       setIsLoading(true);
-      const res = await forgotPassword(email.trim());
-      if (res.devOtp) {
-        setDevOtp(res.devOtp);
-      }
-      toast.success("A new verification code has been generated!");
+      await forgotPassword(email.trim());
+      toast.success("A new verification code has been sent to your email!");
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to resend verification code";
       setError(msg);
@@ -181,24 +174,9 @@ const ForgotPasswordPage = () => {
                   </div>
                   <h2 className="text-2xl font-bold">Reset Password</h2>
                   <p className="text-sm opacity-70 mt-1">
-                    Enter the 6-digit verification code along with your new password.
+                    Please check your email inbox (and spam folder) for the 6-digit verification code.
                   </p>
                 </div>
-
-                {devOtp && (
-                  <div className="alert alert-info mb-4 py-2 px-3 text-xs flex items-center justify-between">
-                    <span>
-                      Dev Code: <strong className="font-mono text-sm tracking-wider">{devOtp}</strong>
-                    </span>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-xs text-xs underline"
-                      onClick={() => setOtp(devOtp)}
-                    >
-                      Autofill
-                    </button>
-                  </div>
-                )}
 
                 <form onSubmit={handleResetPassword} className="space-y-4">
                   {/* OTP Code */}
