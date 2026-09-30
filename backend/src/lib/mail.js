@@ -55,8 +55,8 @@ export const getTransporter = async () => {
     }
 
     // In production, missing credentials must throw immediately with clear instructions
-    if (process.env.NODE_ENV === "production" && !process.env.RESEND_API_KEY) {
-        throw new Error("Email credentials missing. Please set SMTP_USER and SMTP_PASS (or RESEND_API_KEY) in your deployment environment variables.");
+    if (process.env.NODE_ENV === "production" && !process.env.RESEND_API_KEY && !process.env.BREVO_API_KEY) {
+        throw new Error("Email credentials missing. Please set RESEND_API_KEY (recommended for Render) or SMTP credentials in your deployment environment variables.");
     }
 
     if (transporter) return transporter;
@@ -169,7 +169,37 @@ export async function sendPasswordResetEmail(toEmail, otp) {
         return { success: true, messageId: data.id };
     }
 
-    // OPTION 2: Standard SMTP / Gmail (with IPv4 forced)
+    // OPTION 2: Brevo HTTP API (Alternative for Render - uses Port 443 HTTPS)
+    if (process.env.BREVO_API_KEY) {
+        console.log(`[MAIL SERVICE] Sending email via Brevo HTTPS API to ${toEmail}...`);
+        const senderEmail = (process.env.SMTP_USER || process.env.EMAIL_USER || "adeoyeesther815@gmail.com").trim();
+        const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+            method: "POST",
+            headers: {
+                "api-key": process.env.BREVO_API_KEY.trim(),
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            body: JSON.stringify({
+                sender: { name: "hiMEStream", email: senderEmail },
+                to: [{ email: toEmail }],
+                subject: "Your hiMEStream Password Reset Code",
+                htmlContent: htmlContent,
+                textContent: textContent,
+            }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            console.error("[MAIL SERVICE] Brevo API error:", data);
+            throw new Error(data.message || "Failed to send email via Brevo API");
+        }
+
+        console.log(`[MAIL SERVICE] Email sent successfully via Brevo API to ${toEmail}. ID:`, data.messageId);
+        return { success: true, messageId: data.messageId };
+    }
+
+    // OPTION 3: Standard SMTP / Gmail (with IPv4 forced)
     const mailer = await getTransporter();
     const fromAddress = process.env.EMAIL_FROM || (process.env.SMTP_USER ? `"hiMEStream" <${process.env.SMTP_USER}>` : '"hiMEStream" <no-reply@himestream.com>');
 
