@@ -172,7 +172,12 @@ export async function sendPasswordResetEmail(toEmail, otp) {
     // OPTION 2: Brevo HTTP API (Alternative for Render - uses Port 443 HTTPS)
     if (process.env.BREVO_API_KEY) {
         console.log(`[MAIL SERVICE] Sending email via Brevo HTTPS API to ${toEmail}...`);
-        const senderEmail = (process.env.SMTP_USER || process.env.EMAIL_USER || "adeoyeesther815@gmail.com").trim();
+        let senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER;
+        if (!senderEmail && process.env.EMAIL_FROM) {
+            const match = process.env.EMAIL_FROM.match(/<([^>]+)>/);
+            senderEmail = match ? match[1] : process.env.EMAIL_FROM;
+        }
+        senderEmail = (senderEmail || "adeoyeesther815@gmail.com").trim();
         const res = await fetch("https://api.brevo.com/v3/smtp/email", {
             method: "POST",
             headers: {
