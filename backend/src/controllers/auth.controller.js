@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { upsertStreamUser } from "../lib/stream.js";
+import { sendPasswordResetEmail } from "../lib/mail.js";
 
 export async function signup(req, res) {
     const { fullName, email, password } = req.body;
@@ -174,15 +175,16 @@ export async function forgotPassword(req, res) {
         user.resetPasswordOtpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
         await user.save();
 
-        console.log("\n========================================");
-        console.log(`🔑 PASSWORD RESET OTP for ${user.email}: [ ${otp} ]`);
-        console.log("Valid for 15 minutes.");
-        console.log("========================================\n");
+        try {
+            await sendPasswordResetEmail(user.email, otp);
+        } catch (emailErr) {
+            console.error("Failed to send reset email:", emailErr.message);
+            return res.status(500).json({ message: "Failed to send verification email. Please try again later." });
+        }
 
         return res.status(200).json({
             success: true,
-            message: "Verification code generated successfully",
-            devOtp: otp,
+            message: "A verification code has been sent to your email address.",
         });
     } catch (error) {
         console.error("Forgot password error:", error);
