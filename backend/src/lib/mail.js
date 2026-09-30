@@ -1,4 +1,10 @@
 import nodemailer from "nodemailer";
+import dns from "dns";
+
+// Ensure Node.js resolves IPv4 addresses first to avoid ENETUNREACH on cloud environments (e.g. Render) without IPv6 routing
+if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder("ipv4first");
+}
 
 let transporter = null;
 
@@ -10,18 +16,17 @@ export const getTransporter = async () => {
 
     // If real credentials are provided
     if (user && pass) {
-        // If we already have a real authenticated transporter, reuse it
         if (transporter && !transporter.__isTestAccount) {
             return transporter;
         }
 
         const isGmail = host?.includes("gmail") || user.endsWith("@gmail.com");
         if (isGmail) {
-            // Port 465 with SSL is universally allowed on cloud platforms (Render, Railway, etc.)
             transporter = nodemailer.createTransport({
                 host: "smtp.gmail.com",
                 port: 465,
                 secure: true,
+                family: 4, // Force IPv4
                 auth: { user, pass },
                 connectionTimeout: 15000,
                 greetingTimeout: 15000,
@@ -35,6 +40,7 @@ export const getTransporter = async () => {
                 host: host || "smtp.gmail.com",
                 port: port,
                 secure: process.env.SMTP_SECURE === "true" || port === 465,
+                family: 4, // Force IPv4
                 auth: { user, pass },
                 connectionTimeout: 15000,
                 greetingTimeout: 15000,
@@ -49,8 +55,8 @@ export const getTransporter = async () => {
     }
 
     // In production, missing credentials must throw immediately with clear instructions
-    if (process.env.NODE_ENV === "production") {
-        throw new Error("SMTP credentials missing. Please set SMTP_USER and SMTP_PASS in your deployment environment variables.");
+    if (process.env.NODE_ENV === "production" && !process.env.RESEND_API_KEY) {
+        throw new Error("Email credentials missing. Please set SMTP_USER and SMTP_PASS (or RESEND_API_KEY) in your deployment environment variables.");
     }
 
     if (transporter) return transporter;
@@ -63,6 +69,7 @@ export const getTransporter = async () => {
             host: "smtp.ethereal.email",
             port: 587,
             secure: false,
+            family: 4,
             auth: {
                 user: testAccount.user,
                 pass: testAccount.pass,
@@ -77,9 +84,6 @@ export const getTransporter = async () => {
 };
 
 export async function sendPasswordResetEmail(toEmail, otp) {
-    const mailer = await getTransporter();
-    const fromAddress = process.env.EMAIL_FROM || (process.env.SMTP_USER ? `"hiMEStream" <${process.env.SMTP_USER}>` : '"hiMEStream" <no-reply@himestream.com>');
-
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
@@ -135,10 +139,39 @@ export async function sendPasswordResetEmail(toEmail, otp) {
 
     const textContent = `hiMEStream Password Reset\n\nYour verification code is: ${otp}\n\nThis code will expire in 15 minutes.\n\nIf you did not request this reset, you can safely ignore this email.`;
 
-    if (!mailer) {
-        console.warn(`[MAIL SERVICE] Transporter unavailable. Password reset OTP for ${toEmail} is: ${otp}`);
-        return { success: false, error: "No transporter available" };
+    // OPTION 1: Resend HTTP API (Recommended for Render & cloud hosts - uses Port 443 HTTPS, bypasses all SMTP port blocks)
+    if (process.env.RESEND_API_KEY) {
+        console.log(`[MAIL SERVICE] Sending email via Resend HTTPS API to ${toEmail}...`);
+        const fromAddress = process.env.EMAIL_FROM || "onboarding@resend.dev";
+
+        const res = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                from: fromAddress,
+                to: [toEmail],
+                subject: "Your hiMEStream Password Reset Code",
+                html: htmlContent,
+                text: textContent,
+            }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            console.error("[MAIL SERVICE] Resend API error:", data);
+            throw new Error(data.message || (data.name ? `${data.name}: ${data.message}` : "Failed to send email via Resend API"));
+        }
+
+        console.log(`[MAIL SERVICE] Email sent successfully via Resend API to ${toEmail}. ID:`, data.id);
+        return { success: true, messageId: data.id };
     }
+
+    // OPTION 2: Standard SMTP / Gmail (with IPv4 forced)
+    const mailer = await getTransporter();
+    const fromAddress = process.env.EMAIL_FROM || (process.env.SMTP_USER ? `"hiMEStream" <${process.env.SMTP_USER}>` : '"hiMEStream" <no-reply@himestream.com>');
 
     try {
         const info = await mailer.sendMail({
@@ -156,6 +189,10 @@ export async function sendPasswordResetEmail(toEmail, otp) {
         return { success: true, messageId: info.messageId };
     } catch (err) {
         console.error(`[MAIL SERVICE] Failed to send email to ${toEmail}:`, err.message);
+        // If Render or host blocks all SMTP ports, provide an actionable explanation
+        if (err.code === "ECONNREFUSED" || err.code === "ETIMEDOUT" || err.code === "ENETUNREACH") {
+            throw new Error(`Cloud host blocked outbound SMTP port (${err.code}). Please add RESEND_API_KEY in your cloud dashboard to send via HTTPS Port 443.`);
+        }
         throw err;
     }
 }
