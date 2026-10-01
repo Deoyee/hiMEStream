@@ -1038,3 +1038,112 @@
 .str-chat__list-notifications {
   display: none !important;
 }
+
+/* ============================================================
+   STREAM VIDEO NOTIFICATIONS & CONNECTION WARNING OVERRIDES
+   Crystal clear, high-contrast, beautiful glassmorphism alerts
+   ============================================================ */
+.str-video__notification,
+.str-video__notification *,
+.str-video__speaking-while-muted-notification,
+.str-video__speaking-while-muted-notification * {
+  color: #ffffff !important;
+}
+
+.str-video__notification {
+  background: rgba(20, 16, 16, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(245, 158, 11, 0.5) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 16px rgba(245, 158, 11, 0.22) !important;
+  border-radius: 14px !important;
+  padding: 10px 14px !important;
+  z-index: 9999 !important;
+  max-width: 360px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  user-select: none !important;
+  animation: fadeIn 0.25s ease-out !important;
+}
+
+.str-video__notification:hover {
+  background: rgba(28, 22, 22, 0.98) !important;
+  border-color: rgba(245, 158, 11, 0.8) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(245, 158, 11, 0.3) !important;
+}
+
+.str-video__notification::after {
+  content: '✕';
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  margin-left: auto !important;
+  padding-left: 8px !important;
+  transition: color 0.15s ease !important;
+}
+
+.str-video__notification:hover::after {
+  color: #ffffff !important;
+}
+
+.str-video__notification .str-video__notification__message {
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+.str-video__notification .str-video__notification__icon,
+.str-video__notification i:not(.str-video__notification__close) {
+  color: #f59e0b !important;
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5)) !important;
+}
+
+.str-video__notification .str-video__notification__close {
+  color: rgba(255, 255, 255, 0.6) !important;
+  cursor: pointer !important;
+  margin-left: auto !important;
+  padding: 4px !important;
+  transition: color 0.15s ease !important;
+}
+
+.str-video__notification .str-video__notification__close:hover {
+  color: #ffffff !important;
+}
+
+/* Participant Details bar (name + indicators) */
+.str-video__participant-details {
+  background: rgba(15, 12, 12, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-radius: 8px !important;
+  padding: 4px 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.str-video__participant-details__name {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+}
+
+/* Device unavailable indicator on call controls */
+.str-video__device-unavailable {
+  position: relative !important;
+  border: 1px solid rgba(245, 158, 11, 0.6) !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+}
+
+.str-video__no-media-permission {
+  background: #f59e0b !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+  border-radius: 50% !important;
+}

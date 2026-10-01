@@ -6,6 +6,7 @@ import {
   PhoneMissed,
   Video,
   VideoOff,
+  Clock,
 } from "lucide-react";
 
 export const CallMessage = ({ message, isMyMessage, onCallBack }) => {
@@ -18,11 +19,31 @@ export const CallMessage = ({ message, isMyMessage, onCallBack }) => {
     text.includes("type=audio") ||
     text.startsWith("📞");
 
+  const isEnded =
+    message?.call_status === "ended" ||
+    lowerText.includes("ended") ||
+    lowerText.includes("call ended");
+
   const isMissed =
-    message?.call_status === "missed" ||
-    lowerText.includes("missed") ||
-    lowerText.includes("declined") ||
-    lowerText.includes("no answer");
+    !isEnded &&
+    (message?.call_status === "missed" ||
+      lowerText.includes("missed") ||
+      lowerText.includes("declined") ||
+      lowerText.includes("no answer"));
+
+  // Extract duration from text e.g. "📞 Voice call ended • 01:23"
+  const durationMatch = text.match(/(\d{1,2}:\d{2})/);
+  const durationText = message?.call_duration
+    ? typeof message.call_duration === "number"
+      ? `${Math.floor(message.call_duration / 60)
+          .toString()
+          .padStart(2, "0")}:${(message.call_duration % 60)
+          .toString()
+          .padStart(2, "0")}`
+      : String(message.call_duration)
+    : durationMatch
+    ? durationMatch[0]
+    : null;
 
   // Format timestamp nicely
   const timeStr = message?.created_at
@@ -35,19 +56,35 @@ export const CallMessage = ({ message, isMyMessage, onCallBack }) => {
   let title = "";
   if (isMissed) {
     title = isAudio ? "Missed Voice Call" : "Missed Video Call";
+  } else if (isEnded) {
+    title = isAudio ? "Voice Call Ended" : "Video Call Ended";
   } else if (isMyMessage) {
     title = isAudio ? "Outgoing Voice Call" : "Outgoing Video Call";
   } else {
     title = isAudio ? "Incoming Voice Call" : "Incoming Video Call";
   }
 
+  const subtitle = isMissed
+    ? "No answer"
+    : isEnded
+    ? durationText
+      ? `Duration: ${durationText}`
+      : "Call ended"
+    : isMyMessage
+    ? "Calling..."
+    : "Incoming call...";
+
   return (
     <div
       className={`flex items-center gap-3.5 my-1.5 px-4 py-3 rounded-2xl max-w-sm transition-all shadow-md select-none ${
-        isMyMessage
-          ? "ml-auto bg-gradient-to-r from-emerald-900/60 to-emerald-800/40 border border-emerald-500/30 text-emerald-50"
-          : isMissed
+        isMissed
           ? "mr-auto bg-gradient-to-r from-rose-950/60 to-rose-900/40 border border-rose-500/30 text-rose-100"
+          : isEnded
+          ? isMyMessage
+            ? "ml-auto bg-[#1c1818] border border-emerald-500/30 text-gray-100"
+            : "mr-auto bg-[#1c1818] border border-white/10 text-gray-100"
+          : isMyMessage
+          ? "ml-auto bg-gradient-to-r from-emerald-900/60 to-emerald-800/40 border border-emerald-500/30 text-emerald-50"
           : "mr-auto bg-[#241e1e] border border-white/10 text-gray-100"
       }`}
     >
@@ -56,6 +93,8 @@ export const CallMessage = ({ message, isMyMessage, onCallBack }) => {
         className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-inner ${
           isMissed
             ? "bg-rose-500/20 text-rose-400 ring-1 ring-rose-500/30"
+            : isEnded
+            ? "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30"
             : isMyMessage
             ? "bg-emerald-500/25 text-emerald-300 ring-1 ring-emerald-500/30"
             : "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30"
@@ -64,6 +103,8 @@ export const CallMessage = ({ message, isMyMessage, onCallBack }) => {
         {isAudio ? (
           isMissed ? (
             <PhoneMissed className="w-5 h-5 text-rose-400 animate-pulse" />
+          ) : isEnded ? (
+            <Phone className="w-5 h-5 text-emerald-400" />
           ) : isMyMessage ? (
             <PhoneOutgoing className="w-5 h-5 text-emerald-300" />
           ) : (
@@ -80,7 +121,13 @@ export const CallMessage = ({ message, isMyMessage, onCallBack }) => {
       <div className="flex flex-col min-w-0 flex-1">
         <span
           className={`text-[13.5px] font-semibold leading-snug truncate ${
-            isMissed ? "text-rose-300" : isMyMessage ? "text-emerald-100" : "text-gray-100"
+            isMissed
+              ? "text-rose-300"
+              : isEnded
+              ? "text-gray-100"
+              : isMyMessage
+              ? "text-emerald-100"
+              : "text-gray-100"
           }`}
         >
           {title}
@@ -88,8 +135,16 @@ export const CallMessage = ({ message, isMyMessage, onCallBack }) => {
         <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-0.5">
           <span>{timeStr}</span>
           <span>&bull;</span>
-          <span className={isMissed ? "text-rose-400 font-medium" : "text-gray-400"}>
-            {isMissed ? "No answer" : "Call ended"}
+          <span
+            className={
+              isMissed
+                ? "text-rose-400 font-medium"
+                : isEnded
+                ? "text-emerald-400/90 font-medium"
+                : "text-gray-400"
+            }
+          >
+            {subtitle}
           </span>
         </div>
       </div>

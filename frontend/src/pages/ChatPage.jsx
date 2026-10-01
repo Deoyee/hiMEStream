@@ -17,9 +17,12 @@ import { StreamChat } from "stream-chat";
 import { getStreamToken, getUserById, getUserFriends, unfriendUser } from "../lib/api.js";
 import ChatLoader from "../components/ChatLoader.jsx";
 import CallButton from "../components/CallButton.jsx";
-import CallModal from "../components/CallModal.jsx";
 import CallMessage from "../components/CallMessage.jsx";
+import StickerMessage from "../components/StickerMessage.jsx";
+import CustomAttachmentSelector from "../components/CustomAttachmentSelector.jsx";
 import UserProfileModal from "../components/UserProfileModal.jsx";
+import { useCallStore } from "../store/useCallStore";
+import { promptMediaPermissions } from "../lib/mediaPermissions";
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -29,8 +32,8 @@ const ChatPage = () => {
   const [chatClient, setChatClient] = useState(null);
   const [channel, setChannel] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeCall, setActiveCall] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const { startCall } = useCallStore();
 
   const queryClient = useQueryClient();
   const { authUser } = useAuthUser();
@@ -216,13 +219,12 @@ const ChatPage = () => {
     initChat();
   }, [tokenData, authUser, targetUserId]);
 
-  const handleCloseCall = useCallback(() => {
-    setActiveCall(null);
-  }, []);
-
-  const handleVideoCall = useCallback(() => {
+  const handleVideoCall = useCallback(async () => {
     if (channel) {
       const callSessionId = `${channel.id}-${Date.now()}`;
+
+      // Proactively trigger browser permission prompt for camera and microphone
+      promptMediaPermissions(false);
 
       channel.sendMessage({
         text: "📹 Video call",
@@ -232,13 +234,23 @@ const ChatPage = () => {
       });
 
       toast.success("Video call started!");
-      setActiveCall({ callId: callSessionId, isAudioOnly: false });
+      startCall({
+        callId: callSessionId,
+        isAudioOnly: false,
+        channelId: channel.id,
+        channelType: channel.type,
+        callerName: channel?.state?.members?.[targetUserId]?.user?.name,
+        callerPic: channel?.state?.members?.[targetUserId]?.user?.image,
+      });
     }
-  }, [channel]);
+  }, [channel, startCall, targetUserId]);
 
-  const handleVoiceCall = useCallback(() => {
+  const handleVoiceCall = useCallback(async () => {
     if (channel) {
       const callSessionId = `${channel.id}-${Date.now()}`;
+
+      // Proactively trigger browser permission prompt for microphone
+      promptMediaPermissions(true);
 
       channel.sendMessage({
         text: "📞 Voice call",
@@ -248,32 +260,60 @@ const ChatPage = () => {
       });
 
       toast.success("Voice call started!");
-      setActiveCall({ callId: callSessionId, isAudioOnly: true });
+      startCall({
+        callId: callSessionId,
+        isAudioOnly: true,
+        channelId: channel.id,
+        channelType: channel.type,
+        callerName: channel?.state?.members?.[targetUserId]?.user?.name,
+        callerPic: channel?.state?.members?.[targetUserId]?.user?.image,
+      });
     }
-  }, [channel]);
+  }, [channel, startCall, targetUserId]);
 
   const CustomMessage = useCallback(
     (props) => {
       const { message, isMyMessage } = props;
       const text = message?.text || "";
+      const lower = text.toLowerCase();
       const isCall =
         Boolean(message?.call_id) ||
         Boolean(message?.call_type) ||
+        message?.call_status === "started" ||
+        message?.call_status === "missed" ||
+        message?.call_status === "ended" ||
         message?.custom_type === "call" ||
         text.includes("/call/") ||
         text.startsWith("📞") ||
         text.startsWith("📹") ||
-        (text.toLowerCase().includes("call") &&
-          (text.toLowerCase().includes("voice") ||
-            text.toLowerCase().includes("video") ||
-            text.toLowerCase().includes("started") ||
-            text.toLowerCase().includes("missed")));
+        (lower.includes("call") &&
+          (lower.includes("voice") ||
+            lower.includes("video") ||
+            lower.includes("started") ||
+            lower.includes("missed") ||
+            lower.includes("ended")));
+
+      const isMine =
+        typeof isMyMessage === "function"
+          ? isMyMessage()
+          : Boolean(isMyMessage ?? (message?.user?.id === (authUser?._id || authUser?.id)));
+
+      // Check if message is a sticker
+      const isSticker =
+        message?.custom_type === "sticker" ||
+        message?.attachments?.some(
+          (a) => a.custom_type === "sticker" || a.type === "sticker"
+        );
+
+      if (isSticker) {
+        return <StickerMessage message={message} isMyMessage={isMine} />;
+      }
 
       if (isCall) {
         return (
           <CallMessage
             message={message}
-            isMyMessage={isMyMessage}
+            isMyMessage={isMine}
             onCallBack={(isAudio) => {
               if (isAudio) {
                 handleVoiceCall();
@@ -287,7 +327,7 @@ const ChatPage = () => {
 
       return <MessageSimple {...props} />;
     },
-    [handleVoiceCall, handleVideoCall]
+    [handleVoiceCall, handleVideoCall, authUser]
   );
 
   const audioRecordingConfig = useMemo(
@@ -309,7 +349,11 @@ const ChatPage = () => {
   return (
     <div className="h-full w-full flex flex-col flex-1 min-h-0 bg-base-100 overflow-hidden m-0 p-0">
       <Chat client={chatClient} theme="str-chat__theme-dark">
-        <Channel channel={channel}>
+        <Channel
+          channel={channel}
+          Message={CustomMessage}
+          AttachmentSelector={CustomAttachmentSelector}
+        >
           <div className="w-full h-full relative flex flex-col flex-1 min-h-0">
             <CallButton
               handleVideoCall={handleVideoCall}
@@ -343,17 +387,7 @@ const ChatPage = () => {
         </Channel>
       </Chat>
 
-      {/* In-App Call Modal */}
-      {activeCall && (
-        <CallModal
-          isOpen={!!activeCall}
-          onClose={handleCloseCall}
-          callId={activeCall.callId}
-          isAudioOnly={activeCall.isAudioOnly}
-          authUser={authUser}
-          token={tokenData?.token}
-        />
-      )}
+
 
       {/* User Profile Modal */}
       {isProfileModalOpen && (

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { acceptFriendRequest, rejectFriendRequest, getFriendRequests } from "../lib/api";
 import { BellIcon, ClockIcon, MessageSquareIcon, UserCheckIcon, X, Check } from "lucide-react";
@@ -7,13 +8,15 @@ import Avatar from "../components/Avatar.jsx";
 
 const NotificationsPage = () => {
   const queryClient = useQueryClient();
+  const [actioningId, setActioningId] = useState(null);
+  const [actionType, setActionType] = useState(null); // 'accept' | 'reject'
 
   const { data: friendRequests, isLoading } = useQuery({
     queryKey: ["friendRequests"],
     queryFn: getFriendRequests,
   });
 
-  const { mutate: acceptRequestMutation, isPending } = useMutation({
+  const { mutate: acceptRequestMutation } = useMutation({
     mutationFn: acceptFriendRequest,
     onSuccess: () => {
       toast.success("Friend request accepted!");
@@ -23,9 +26,13 @@ const NotificationsPage = () => {
     onError: () => {
       toast.error("Failed to accept request");
     },
+    onSettled: () => {
+      setActioningId(null);
+      setActionType(null);
+    },
   });
 
-  const { mutate: rejectRequestMutation, isPending: isRejecting } = useMutation({
+  const { mutate: rejectRequestMutation } = useMutation({
     mutationFn: rejectFriendRequest,
     onSuccess: () => {
       toast.success("Friend request declined");
@@ -33,6 +40,10 @@ const NotificationsPage = () => {
     },
     onError: () => {
       toast.error("Failed to decline request");
+    },
+    onSettled: () => {
+      setActioningId(null);
+      setActionType(null);
     },
   });
 
@@ -73,18 +84,18 @@ const NotificationsPage = () => {
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3.5 min-w-0">
                           <Avatar
-                            src={request.sender.profilePic}
-                            name={request.sender.fullName}
+                            src={request.sender?.profilePic}
+                            name={request.sender?.fullName || "User"}
                             size="md"
                           />
                           <div className="min-w-0">
-                            <h3 className="font-bold text-base text-base-content truncate">{request.sender.fullName}</h3>
+                            <h3 className="font-bold text-base text-base-content truncate">{request.sender?.fullName}</h3>
                             <div className="flex flex-wrap items-center gap-1.5 mt-1">
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                                Native: {request.sender.nativeLanguage}
+                                Native: {request.sender?.nativeLanguage || "N/A"}
                               </span>
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
-                                Learning: {request.sender.learningLanguage}
+                                Learning: {request.sender?.learningLanguage || "N/A"}
                               </span>
                             </div>
                           </div>
@@ -92,18 +103,36 @@ const NotificationsPage = () => {
 
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <button
-                            className="btn btn-outline btn-error btn-sm rounded-xl font-medium px-3.5 shadow-sm active:scale-[0.98]"
-                            onClick={() => rejectRequestMutation(request._id)}
-                            disabled={isPending || isRejecting}
+                            type="button"
+                            className="btn btn-outline btn-error btn-sm rounded-xl font-medium px-3.5 shadow-sm active:scale-[0.98] transition-all"
+                            onClick={() => {
+                              setActioningId(request._id);
+                              setActionType("reject");
+                              rejectRequestMutation(request._id);
+                            }}
+                            disabled={actioningId === request._id}
                           >
-                            Decline
+                            {actioningId === request._id && actionType === "reject" ? (
+                              <span className="loading loading-spinner loading-xs" />
+                            ) : (
+                              "Decline"
+                            )}
                           </button>
                           <button
-                            className="btn btn-primary btn-sm rounded-xl font-medium px-4 shadow-sm active:scale-[0.98]"
-                            onClick={() => acceptRequestMutation(request._id)}
-                            disabled={isPending || isRejecting}
+                            type="button"
+                            className="btn btn-primary btn-sm rounded-xl font-medium px-4 shadow-sm active:scale-[0.98] transition-all"
+                            onClick={() => {
+                              setActioningId(request._id);
+                              setActionType("accept");
+                              acceptRequestMutation(request._id);
+                            }}
+                            disabled={actioningId === request._id}
                           >
-                            Accept
+                            {actioningId === request._id && actionType === "accept" ? (
+                              <span className="loading loading-spinner loading-xs" />
+                            ) : (
+                              "Accept"
+                            )}
                           </button>
                         </div>
                       </div>

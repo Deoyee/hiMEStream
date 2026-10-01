@@ -47,7 +47,8 @@ export async function rejectFriendRequest(req, res) {
         }
 
         // Verify the current user is the recipient
-        if (friendRequest.recipient.toString() !== req.user.id) {
+        const myId = String(req.user._id || req.user.id || "");
+        if (friendRequest.recipient.toString() !== myId) {
             return res.status(403).json({ message: "You are not authorized to decline this request" });
         }
 
@@ -203,7 +204,8 @@ export async function acceptFriendRequest(req, res) {
         }
 
         // Verify the current user is the recipient
-        if (friendRequest.recipient.toString() !== req.user.id) {
+        const myId = String(req.user._id || req.user.id || "");
+        if (friendRequest.recipient.toString() !== myId) {
             return res.status(403).json({ message: "You are not authorized to accept this request" });
         }
 
