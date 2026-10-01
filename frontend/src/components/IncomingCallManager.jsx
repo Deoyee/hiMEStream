@@ -1,19 +1,24 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { StreamChat } from "stream-chat";
 import { useQuery } from "@tanstack/react-query";
 import { getStreamToken } from "../lib/api";
 import useAuthUser from "../hooks/useAuthUser";
-import { Phone, Video, PhoneCall, X, Check } from "lucide-react";
+import { Phone, Video, PhoneCall, X, Check, Volume2 } from "lucide-react";
 import Avatar from "./Avatar.jsx";
 import CallModal from "./CallModal.jsx";
+import ringtone from "../lib/ringtone.js";
+import { useCallStore } from "../store/useCallStore";
+import { promptMediaPermissions } from "../lib/mediaPermissions";
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
 const IncomingCallManager = () => {
   const { authUser } = useAuthUser();
   const [incomingCall, setIncomingCall] = useState(null);
-  const [activeCallModal, setActiveCallModal] = useState(null);
   const [chatClient, setChatClient] = useState(null);
+  const { activeCall, startCall, endCall } = useCallStore();
+  const incomingCallRef = useRef(null);
+  incomingCallRef.current = incomingCall;
 
   const { data: tokenData } = useQuery({
     queryKey: ["streamToken"],
@@ -21,11 +26,32 @@ const IncomingCallManager = () => {
     enabled: !!authUser,
   });
 
+  // Play ringtone whenever there is an incoming call, stop when dismissed/accepted
+  useEffect(() => {
+    if (incomingCall && !activeCall) {
+      ringtone.play();
+    } else {
+      ringtone.stop();
+    }
+    return () => {
+      ringtone.stop();
+    };
+  }, [incomingCall, activeCall]);
+
+  // When a call becomes active (started or answered), immediately dismiss incoming prompt & ringtone
+  useEffect(() => {
+    if (activeCall) {
+      ringtone.stop();
+      setIncomingCall(null);
+    }
+  }, [activeCall]);
+
   useEffect(() => {
     if (!tokenData?.token || !authUser) return;
 
     let client = null;
-    let listener = null;
+    let messageListener = null;
+    let updateListener = null;
 
     const setupListener = async () => {
       try {
@@ -33,21 +59,32 @@ const IncomingCallManager = () => {
         setChatClient(client);
 
         // Listen for new messages across all user channels
-        listener = client.on("message.new", (event) => {
+        messageListener = client.on("message.new", (event) => {
           const msg = event?.message;
           if (!msg) return;
 
-          // Ignore messages sent by ourselves
+          // If user is already on a call, ignore incoming calls
+          if (useCallStore.getState().activeCall) return;
+
+          // Ignore messages sent by ourselves (check both authUser ID and client.userID)
           const myId = String(authUser?._id || authUser?.id || "");
           const senderId = String(msg.user?.id || "");
-          if (myId && senderId && myId === senderId) return;
+          const clientUserId = String(client?.userID || "");
+          if (
+            (myId && senderId && myId === senderId) ||
+            (clientUserId && senderId && clientUserId === senderId)
+          ) {
+            return;
+          }
 
           // Ignore messages already marked missed or ended
           const lowerText = (msg.text || "").toLowerCase();
           if (
             msg.call_status === "missed" ||
+            msg.call_status === "ended" ||
             lowerText.includes("missed") ||
-            lowerText.includes("no answer")
+            lowerText.includes("no answer") ||
+            lowerText.includes("ended")
           ) {
             return;
           }
@@ -57,8 +94,8 @@ const IncomingCallManager = () => {
             Boolean(msg.call_id) ||
             msg.call_status === "started" ||
             msg.text?.includes("/call/") ||
-            (msg.text?.startsWith("📞") && !lowerText.includes("missed")) ||
-            (msg.text?.startsWith("📹") && !lowerText.includes("missed"));
+            (msg.text?.startsWith("📞") && !lowerText.includes("missed") && !lowerText.includes("ended")) ||
+            (msg.text?.startsWith("📹") && !lowerText.includes("missed") && !lowerText.includes("ended"));
 
           if (isCallMsg) {
             const createdAt = new Date(msg.created_at).getTime();
@@ -85,6 +122,7 @@ const IncomingCallManager = () => {
 
               if (callId) {
                 setIncomingCall({
+                  messageId: msg.id,
                   callId,
                   isAudioOnly,
                   caller: msg.user,
@@ -92,6 +130,26 @@ const IncomingCallManager = () => {
                   channelId: event.channel_id,
                   channelType: event.channel_type || "messaging",
                 });
+              }
+            }
+          }
+        });
+
+        // Listen for call cancellation / missed updates
+        updateListener = client.on("message.updated", (event) => {
+          const msg = event?.message;
+          const currentCall = incomingCallRef.current;
+          if (msg && currentCall) {
+            if (msg.call_id === currentCall.callId || msg.id === currentCall.messageId) {
+              const lowerText = (msg.text || "").toLowerCase();
+              if (
+                msg.call_status === "missed" ||
+                msg.call_status === "ended" ||
+                lowerText.includes("missed") ||
+                lowerText.includes("ended")
+              ) {
+                ringtone.stop();
+                setIncomingCall(null);
               }
             }
           }
@@ -104,8 +162,12 @@ const IncomingCallManager = () => {
     setupListener();
 
     return () => {
-      if (listener && typeof listener.unsubscribe === "function") {
-        listener.unsubscribe();
+      ringtone.stop();
+      if (messageListener && typeof messageListener.unsubscribe === "function") {
+        messageListener.unsubscribe();
+      }
+      if (updateListener && typeof updateListener.unsubscribe === "function") {
+        updateListener.unsubscribe();
       }
     };
   }, [tokenData, authUser]);
@@ -115,6 +177,14 @@ const IncomingCallManager = () => {
     if (!incomingCall) return;
 
     const timer = setTimeout(() => {
+      ringtone.stop();
+
+      // NEVER send missed call message if the user is currently in a call!
+      if (useCallStore.getState().activeCall) {
+        setIncomingCall(null);
+        return;
+      }
+
       if (chatClient && authUser) {
         try {
           const channelType = incomingCall.channelType || "messaging";
@@ -139,21 +209,26 @@ const IncomingCallManager = () => {
     return () => clearTimeout(timer);
   }, [incomingCall, chatClient, authUser]);
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
+    ringtone.stop();
     if (incomingCall) {
-      setActiveCallModal({
+      // Proactively trigger browser permission prompt for mic & cam
+      promptMediaPermissions(incomingCall.isAudioOnly);
+
+      startCall({
         callId: incomingCall.callId,
         isAudioOnly: incomingCall.isAudioOnly,
+        channelId: incomingCall.channelId,
+        channelType: incomingCall.channelType,
+        callerName: incomingCall.caller?.name,
+        callerPic: incomingCall.caller?.image,
       });
       setIncomingCall(null);
     }
   };
 
-  const handleCloseCallModal = useCallback(() => {
-    setActiveCallModal(null);
-  }, []);
-
   const handleDecline = () => {
+    ringtone.stop();
     if (incomingCall && chatClient && authUser) {
       try {
         const channelType = incomingCall.channelType || "messaging";
@@ -202,10 +277,14 @@ const IncomingCallManager = () => {
                 <p className="font-bold text-sm text-white truncate">
                   {incomingCall.caller?.name || "Someone"}
                 </p>
-                <p className="text-xs text-emerald-400 font-medium flex items-center gap-1">
-                  <span className="size-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                <p className="text-xs text-emerald-400 font-medium flex items-center gap-1.5">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <Volume2 className="size-3 text-emerald-400 animate-pulse" />
                   <span>
-                    Incoming {incomingCall.isAudioOnly ? "Voice" : "Video"} Call...
+                    Incoming {incomingCall.isAudioOnly ? "Voice" : "Video"} Call • Ringing...
                   </span>
                 </p>
               </div>
@@ -237,13 +316,13 @@ const IncomingCallManager = () => {
         </div>
       )}
 
-      {/* In-App Call Modal when accepted via banner */}
-      {activeCallModal && (
+      {/* Global In-App Call Modal (Fullscreen or Minimized Picture-in-Picture) */}
+      {activeCall && (
         <CallModal
-          isOpen={!!activeCallModal}
-          onClose={handleCloseCallModal}
-          callId={activeCallModal.callId}
-          isAudioOnly={activeCallModal.isAudioOnly}
+          isOpen={!!activeCall}
+          onClose={endCall}
+          callId={activeCall.callId}
+          isAudioOnly={activeCall.isAudioOnly}
           authUser={authUser}
           token={tokenData?.token}
         />
