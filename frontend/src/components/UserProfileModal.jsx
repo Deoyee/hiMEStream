@@ -11,8 +11,11 @@ const UserProfileModal = ({
   user,
   isFriend = false,
   isRequested = false,
+  isIncoming = false,
   onSendRequest,
   onCancelRequest,
+  onAcceptRequest,
+  onRejectRequest,
   onUnfriend,
 }) => {
   const { isUserOnline } = useOnlineUsers();
@@ -155,6 +158,34 @@ const UserProfileModal = ({
                   </button>
                 )}
               </>
+            ) : isIncoming ? (
+              <div className="flex items-center gap-2 w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAcceptRequest && onAcceptRequest();
+                    onClose();
+                  }}
+                  className="btn btn-success flex-1 rounded-2xl font-medium gap-2 text-white shadow-md hover:shadow-lg"
+                >
+                  <CheckCircle2 className="size-4" />
+                  <span>Accept Request</span>
+                </button>
+                {onRejectRequest && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onRejectRequest && onRejectRequest();
+                      onClose();
+                    }}
+                    className="btn btn-outline btn-error rounded-2xl px-4 font-medium"
+                    title="Decline request"
+                  >
+                    <X className="size-4" />
+                    <span>Decline</span>
+                  </button>
+                )}
+              </div>
             ) : isRequested ? (
               <button
                 type="button"

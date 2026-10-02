@@ -7,6 +7,9 @@ import {
   sendFriendRequest,
   cancelFriendRequest,
   getChatHistory,
+  getFriendRequests,
+  acceptFriendRequest,
+  rejectFriendRequest,
 } from '../lib/api';
 import { Link } from 'react-router';
 import {
@@ -71,14 +74,26 @@ const HomePage = () => {
     queryFn: getOutgoingFriendReqs,
   });
 
+  const { data: friendRequests } = useQuery({
+    queryKey: ['friendRequests'],
+    queryFn: getFriendRequests,
+  });
+
   const { mutateAsync: sendRequestMutationAsync } = useMutation({
     mutationFn: sendFriendRequest,
-    onSuccess: () => {
-      toast.success('Friend request sent!');
+    onSuccess: (data) => {
+      if (data?.isMutualAccept) {
+        toast.success(data?.message || 'You are now friends!');
+        queryClient.invalidateQueries({ queryKey: ['friends'] });
+        queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+      } else {
+        toast.success('Friend request sent!');
+      }
       queryClient.invalidateQueries({ queryKey: ['outgoingFriendReqs'] });
     },
-    onError: () => {
-      toast.error('Failed to send friend request');
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || 'Failed to send friend request');
     },
   });
 
@@ -88,8 +103,34 @@ const HomePage = () => {
       toast.success('Friend request cancelled');
       queryClient.invalidateQueries({ queryKey: ['outgoingFriendReqs'] });
     },
-    onError: () => {
-      toast.error('Failed to cancel request');
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || 'Failed to cancel request');
+    },
+  });
+
+  const { mutateAsync: acceptRequestMutationAsync } = useMutation({
+    mutationFn: acceptFriendRequest,
+    onSuccess: () => {
+      toast.success('Friend request accepted!');
+      queryClient.invalidateQueries({ queryKey: ['friends'] });
+      queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['outgoingFriendReqs'] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || 'Failed to accept request');
+    },
+  });
+
+  const { mutateAsync: rejectRequestMutationAsync } = useMutation({
+    mutationFn: rejectFriendRequest,
+    onSuccess: () => {
+      toast.success('Friend request declined');
+      queryClient.invalidateQueries({ queryKey: ['friendRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || 'Failed to decline request');
     },
   });
 
@@ -128,6 +169,35 @@ const HomePage = () => {
       setSubmittingId(null);
     }
   };
+
+  const handleAcceptRequest = async (requestId, userId) => {
+    setSubmittingId(userId);
+    try {
+      await acceptRequestMutationAsync(requestId);
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  const handleRejectRequest = async (requestId, userId) => {
+    setSubmittingId(userId);
+    try {
+      await rejectRequestMutationAsync(requestId);
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  const incomingRequestsMap = useMemo(() => {
+    const map = new Map();
+    (friendRequests?.incomingReqs || []).forEach((req) => {
+      const senderId = req.sender?._id || req.sender;
+      if (senderId) {
+        map.set(String(senderId), req._id);
+      }
+    });
+    return map;
+  }, [friendRequests]);
 
   const isRequested = (id) => outgoingRequestsIds.has(id);
 
@@ -449,6 +519,8 @@ const HomePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredUsers.map((user) => {
                 const sent = isRequested(user._id);
+                const incomingReqId = incomingRequestsMap.get(user._id);
+                const isIncoming = Boolean(incomingReqId);
                 const isOnline = isUserOnline(user._id);
                 const isSubmitting = submittingId === user._id;
 
@@ -472,9 +544,16 @@ const HomePage = () => {
                           isOnline={isOnline}
                         />
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-lg text-base-content group-hover/card:text-primary transition-colors truncate leading-snug">
-                            {user.fullName}
-                          </h3>
+                          <div className="flex items-center justify-between gap-1">
+                            <h3 className="font-bold text-lg text-base-content group-hover/card:text-primary transition-colors truncate leading-snug">
+                              {user.fullName}
+                            </h3>
+                            {isIncoming && (
+                              <span className="badge badge-success badge-sm font-semibold flex-shrink-0 gap-1 text-[11px] py-1 px-2 text-white">
+                                <CheckCircleIcon className="size-3" /> Requested
+                              </span>
+                            )}
+                          </div>
                           {user.location && (
                             <div className="flex items-center text-xs text-base-content/60 mt-1">
                               <MapPinIcon className="size-3 mr-1 text-primary/70 flex-shrink-0" />
@@ -505,7 +584,29 @@ const HomePage = () => {
 
                       {/* Actions */}
                       <div className="pt-2 flex items-center gap-2">
-                        {sent ? (
+                        {isIncoming ? (
+                          <div className="flex items-center gap-2 w-full">
+                            <button
+                              type="button"
+                              onClick={() => handleAcceptRequest(incomingReqId, user._id)}
+                              disabled={isSubmitting}
+                              className="btn btn-success flex-1 rounded-xl font-medium gap-1.5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] text-white"
+                              title="Accept friend request"
+                            >
+                              <CheckCircleIcon className="size-4" />
+                              <span>Accept</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRejectRequest(incomingReqId, user._id)}
+                              disabled={isSubmitting}
+                              className="btn btn-ghost btn-outline btn-error btn-square rounded-xl transition-all"
+                              title="Decline request"
+                            >
+                              <X className="size-4" />
+                            </button>
+                          </div>
+                        ) : sent ? (
                           <button
                             type="button"
                             onClick={() => handleCancelRequest(user._id)}
@@ -545,8 +646,17 @@ const HomePage = () => {
           user={selectedUser}
           isFriend={friends.some((f) => f._id === selectedUser._id)}
           isRequested={isRequested(selectedUser._id)}
+          isIncoming={incomingRequestsMap.has(selectedUser._id)}
           onSendRequest={(id) => handleSendRequest(id)}
           onCancelRequest={(id) => handleCancelRequest(id)}
+          onAcceptRequest={() => {
+            const reqId = incomingRequestsMap.get(selectedUser._id);
+            if (reqId) handleAcceptRequest(reqId, selectedUser._id);
+          }}
+          onRejectRequest={() => {
+            const reqId = incomingRequestsMap.get(selectedUser._id);
+            if (reqId) handleRejectRequest(reqId, selectedUser._id);
+          }}
         />
       )}
     </div>

@@ -22,9 +22,11 @@ const NotificationsPage = () => {
       toast.success("Friend request accepted!");
       queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
       queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] });
     },
-    onError: () => {
-      toast.error("Failed to accept request");
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || "Failed to accept request");
     },
     onSettled: () => {
       setActioningId(null);
@@ -37,9 +39,10 @@ const NotificationsPage = () => {
     onSuccess: () => {
       toast.success("Friend request declined");
       queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: () => {
-      toast.error("Failed to decline request");
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || "Failed to decline request");
     },
     onSettled: () => {
       setActioningId(null);
